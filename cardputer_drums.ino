@@ -15,159 +15,24 @@
 // TODO:
 // Kits, opt 1-10
 // fix clicking?
-// sd card reading?
-// persistent patterns
 // Attack for drums (fix)
 // Filter for drums
 // Loop samples
 // Sample tuning
 // Channel filters?
 
+// maybe:
+// sd card reading?
+// persistent patterns (in Flash with SPIFFS?)
+
+
 #include <M5Cardputer.h>
-
-// one channel
-typedef struct channel_t
-{
-  int16_t volume;
-  int8_t mute;
-  int8_t solo;
-  int8_t _enabled; // NB: not directly modified; updated to reflect mute/solo status of all channels
-
-} channel_t;
-
-// a sample, with PCM data, length and a frequency
-typedef struct sample_t
-{
-  int16_t *samples = 0;
-  int32_t len = 0;
-  int32_t freqIncrement = 0; // 32768 = 1.0
-} sample_t;
-
-// one step of a channel
-typedef struct chanData_t
-{
-  int16_t type;
-  int16_t velocity;
-  int32_t kickDelay; // additional delay, in kickSubdiv units
-} chanData_t;
-
-// the cursor location/flash state
-typedef struct cursor_t
-{
-  int8_t step;
-  int8_t chan;
-  int8_t width;
-  int8_t height;
-  int16_t flash;
-  int8_t on;
-} cursor_t;
-
-// data for mixing one channel into the final mix
-typedef struct mixData_t
-{
-  sample_t *currentSample;
-  int32_t sampleIndex;
-  int16_t stepIndex;
-  int16_t nextIndex;
-  int32_t kickDelay;
-  int16_t currentVelocity;
-} mixData_t;
-
-float iirAlpha(int sr, float freq)
-{
-  return 1.0 / (1.0 + (sr / (2 * M_PI * freq)));
-}
-
-float halfLifeTime(int sr, float t)
-{
-  return exp(-log(2.0) / ((float)t * (float)sr + 0.0f));
-}
-
-// times in milliseconds, frequencies in hZ
-void createDrum(sample_t *sample, int32_t len, int32_t samplerate, float delay, float startFreq, float ampAttack, float freqDecay, float ampDecay, float noise, float overdrive)
-{
-  int32_t j;
-  float freq = startFreq;
-  float amp = 1.0;
-  float ph = 0.0;
-  float out;
-  int32_t delaySamples;
-  delaySamples = delay * samplerate / 1000;
-  float ampD = halfLifeTime(samplerate, ampDecay / 1000);
-  float freqD = halfLifeTime(samplerate, freqDecay / 1000);
-  float ampAttackInc = 1.0 / (samplerate * (ampAttack / 1000));
-  float t = 0;
-
-  for (j = delay; j < sample->len; j++)
-  {
-    ph += (freq * 2 * M_PI) / samplerate;
-    out = cos(ph);
-    out += noise * random(-32767, 32767) / 32767.0;
-    out *= amp;
-    out *= overdrive;
-    if (out > 1.0)
-      out = 1.0;
-    if (out < -1.0)
-      out = -1.0;
-    out += sample->samples[j] / 32767.0; // accumulate on top of existing sample
-    sample->samples[j] = tanh(out) * 32767.0f;
-
-    freq *= freqD;
-    amp *= ampD;
-    // if(t>ampAttack)
-    //   amp *= ampD; // exp decay
-    // else
-    //  amp += ampAttackInc; // linear attack
-
-    t += 1000 / samplerate;
-  }
-}
-
-// times in milliseconds, frequencies in hZ
-void createFM(sample_t *sample, int32_t len, int32_t samplerate, float freq, float ampAttack, float modRatio, float modStart, float modDecay, float ampDecay)
-{
-  int32_t j;
-
-  float amp = 1.0;
-  float ph = 0.0;
-  float modPh = 0.0;
-  float out;
-
-  float mod = modStart;
-  float modFreq = freq * modRatio;
-  float ampD = halfLifeTime(samplerate, ampDecay / 1000);
-  float modD = halfLifeTime(samplerate, modDecay / 1000);
-  float ampAttackInc = 1.0 / (samplerate * (ampAttack / 1000));
-  float t = 0;
-
-  for (j = 0; j < sample->len; j++)
-  {
-    ph += (freq * 2 * M_PI) / samplerate;
-    modPh += (modFreq * 2 * M_PI) / samplerate;
-    out = cos(ph + cos(modPh) * mod);
-    out *= amp;
-    out += sample->samples[j] / 32767.0; // accumulate on top of existing sample
-    sample->samples[j] = tanh(out) * 32767.0f;
-
-    mod = mod * modD;
-    // if(t>ampAttack)
-    amp *= ampD; // exp decay
-    // else
-    // amp += ampAttackInc; // linear attack
-
-    t += 1000 / samplerate;
-  }
-}
+#include "datatypes.h"
+#include "config.h"
+#include "synth.h"
 
 #define RGB565(r, g, b) (((r & 0x1F) << 11) | ((g & 0x3F) << 5) | (b & 0x1F))
 
-static constexpr const size_t samplerate = 16000;
-static constexpr const int16_t nSteps = 16;
-static constexpr const int16_t nChans = 8;
-static constexpr const int16_t maxPatterns = 10;
-static constexpr const int16_t kickSubdiv = 12; // subdivisions per unit time
-static constexpr const int16_t minBPM = 60;     // minimum bpm
-static constexpr const int16_t cursorFlashTime = 200;
 
 static sample_t drumSamples[26];
 static int16_t *audioBuffers[4] = {NULL, NULL, NULL, NULL}; // 4 buffers
