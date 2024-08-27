@@ -1,10 +1,8 @@
 
 /**
- * @file mic.ino
- * @author SeanKwok (shaoxiang@m5stack.com)
- * @brief M5Cardputer Microphone Record Test
- * @version 0.1
- * @date 2023-10-09
+ * @file cardputer_drums
+ * @author John H. Williamson
+ * @brief M5Cardputer Drum machine
  *
  *
  * @Hardwares: M5Cardputer
@@ -15,12 +13,11 @@
  */
 
 // TODO:
-// fix pattern
 // Kits, opt 1-10
-// better drums
+// fix clicking?
 // sd card reading?
 // persistent patterns
-// Attack for drums
+// Attack for drums (fix)
 // Filter for drums
 // Loop samples
 // Sample tuning
