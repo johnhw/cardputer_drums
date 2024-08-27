@@ -16,9 +16,13 @@ The dot grid indicates the 16x8 steps for the current pattern.
 
 ### Status line
 
-* **BPM** current BPM
-* **SWI** current swing (0-100; about 20-30 is useful)
-* **PAT** current pattern number
+#### Top
+* [01] Pattern number
+
+### Bottom
+* **BPM** current BPM (60-320)
+* **SWI** current swing (0-99; about 20-30 is useful)
+* **VOL** volume (0-16)
 * **KIT** kit selected (currently only one kit)
 * **12345678** channel enabled status. Mute'd channels are grayed. Solo'd channels are red. 
 
@@ -36,6 +40,10 @@ The dot grid indicates the 16x8 steps for the current pattern.
 
 * `fn+←` decrease swing
 * `fn+→` increase swing
+
+* `fn+[` decrease volume
+* `fn+]` increase volume
+
 
 * `fn+esc` enter instant preview mode -- press a key to hear the sample preview. `fn+esc` switches back to pattern mode.
 

@@ -1,6 +1,7 @@
 #ifndef DATATYPES_H
 #define DATATYPES_H
 #include <stdint.h>
+#include "config.h"
 
 // one channel
 typedef struct channel_t
@@ -37,6 +38,7 @@ typedef struct cursor_t
   int8_t height;
   int16_t flash;
   int8_t on;
+  int8_t dirty;
 } cursor_t;
 
 // data for mixing one channel into the final mix
@@ -49,4 +51,31 @@ typedef struct mixData_t
   int32_t kickDelay;
   int16_t currentVelocity;
 } mixData_t;
+
+struct DrumMachine {
+    sample_t drumSamples[26];
+    int16_t* audioBuffers[4] = {nullptr, nullptr, nullptr, nullptr}; // 4 buffers
+    int8_t waveBufferIndex = 0;
+    int32_t patternSamples; // number of samples in a whole pattern
+    int16_t waveBufferLen;  // samples in one buffer (1/4 pattern)
+    int8_t playMode = 0;    // 0=normal; 1=sample preview
+    int16_t syncMix = 0;    // flag to indicate to remix at the next pattern loop
+    int16_t stepSamples;    // length of one step in samples (usually 1/16th of a pattern)
+    int32_t oneKickTime;    // time in samples to kick forward by one kickSubdiv of a step (usually 1/12 of a step)
+    uint32_t syncMillis;    // time in milliseconds of the last pattern loop start
+    int16_t beatTime;       // the current beat/step we are in right now
+    int16_t bpm = 120;
+    int16_t swing = 0;
+    int16_t pattern = 0;
+    int16_t kit = 0;
+    int16_t volume = 0; // 16 volume levels
+
+    cursor_t cursor;
+    channel_t channels[nChans];
+    chanData_t* currentPattern;
+    chanData_t allPatterns[nSteps * nChans * maxPatterns];
+    chanData_t clipboard[nSteps * nChans];
+};
+
 #endif
+

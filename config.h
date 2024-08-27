@@ -1,6 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
-static constexpr const size_t samplerate = 16000;
+static constexpr const int32_t samplerate = 16000;
 static constexpr const int16_t nSteps = 16;
 static constexpr const int16_t nChans = 8;
 static constexpr const int16_t maxPatterns = 10;
