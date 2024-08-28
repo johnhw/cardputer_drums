@@ -166,6 +166,28 @@ void patternModeKeys(DrumMachine &dm)
   }
 }
 
+void patternCursorMove(DrumMachine &dm, int step)
+{
+
+}
+
+void patternInsertCurrent(DrumMachine &dm)
+{
+
+
+}
+
+void patternDeleteCurrent(DrumMachine &dm)
+{
+
+
+}
+
+void patternSwitchMode(DrumMachine &dm)
+{
+
+}
+
 void channelKey(DrumMachine& dm, Keyboard_Class::KeysState status)
 {
     int16_t digit = getDigitPressed(status) - 1;
@@ -176,12 +198,24 @@ void channelKey(DrumMachine& dm, Keyboard_Class::KeysState status)
         else
           toggleMute(dm, digit);          
       }          
+
+  if (M5Cardputer.Keyboard.isKeyPressed(','))
+    patternCursorMove(dm, -1);
+  if (M5Cardputer.Keyboard.isKeyPressed('/'))
+    patternCursorMove(dm, 1);
+  if (M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER))
+      patternInsertCurrent(dm);
+  if (M5Cardputer.Keyboard.isKeyPressed(KEY_BACKSPACE))
+      patternDeleteCurrent(dm);
+  if (M5Cardputer.Keyboard.isKeyPressed('`'))
+      patternSwitchMode(dm);
+  
 }
 
 void fnKey(DrumMachine& dm, Keyboard_Class::KeysState status)
 {
   // bpm and swing
-  if(status.ctrl)
+  
   if (M5Cardputer.Keyboard.isKeyPressed(','))
     adjSwing(dm, -1);
   if (M5Cardputer.Keyboard.isKeyPressed('/'))
@@ -216,7 +250,10 @@ void fnKey(DrumMachine& dm, Keyboard_Class::KeysState status)
   int16_t digit = getDigitPressed(status);
   if(digit>=0)
   {
-    setPattern(dm, digit);
+    if(status.alt)
+      setPattern(dm, digit+10);
+    else
+      setPattern(dm, digit);
   }
   
 }
@@ -239,7 +276,7 @@ void renderCursor(DrumMachine& dm, int state)
     getCursorChar(dm, ch, vel);
     s[0] = ch;
 
-    int16_t charColor = RGB565(0, vel * 3, 0);
+    int16_t charColor = RGB565(0, vel * 3 - ((dm.cursor.step % 2) ? 0 : 2), 0);
     int boxOffX = -4;
     int boxOffY = -2;
     int boxX = drawX + boxOffX;
@@ -248,8 +285,9 @@ void renderCursor(DrumMachine& dm, int state)
     // Render cursor based on state
     if (state == 0) // no flash
     {
-        M5Cardputer.Display.fillRect(boxX - kickWidth, boxY, dm.cursor.width + kickWidth, dm.cursor.height, charColor);
+        M5Cardputer.Display.fillRect(boxX - kickWidth, boxY, dm.cursor.width + kickWidth, dm.cursor.height, charColor);        
         M5Cardputer.Display.drawString(s, drawX, drawY - dm.cursor.height / 2);
+        
     }
     else if (state == 1) // flash on
     {
@@ -283,10 +321,11 @@ void drawTopLine(DrumMachine &dm)
 {
     int topHeight = 12; 
     char statusLine[256];
+    const char *patternNames = "0123456789ABCDEFGHIJ";
 
     // Clear the status bar area
-    M5Cardputer.Display.fillRect(0, 0, M5Cardputer.Display.width(), topHeight, TFT_BLACK);
-    snprintf(statusLine, 255, "%02d", dm.pattern);
+    M5Cardputer.Display.fillRect(0, 0, M5Cardputer.Display.width(), topHeight, TFT_BLACK);    
+    snprintf(statusLine, 255, "%c", patternNames[dm.pattern]);
     M5Cardputer.Display.drawString(statusLine, 10, 3);
 }
 

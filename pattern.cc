@@ -125,7 +125,7 @@ int32_t getKickDelay(DrumMachine& dm, int16_t step, int16_t chan)
 sample_t *getSample(DrumMachine& dm, int16_t sampleIndex)
 {
     int ix = sampleIndex - '`';
-    if (ix <= 0 || ix >= 19)
+    if (ix <= 0 || ix >= 26)
         return nullptr;
     return &dm.drumSamples[ix];
 }

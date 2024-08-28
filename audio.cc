@@ -52,65 +52,56 @@ void allocateMix(DrumMachine& dm) {
 void autoSample(DrumMachine &dm, int drumIndex)
 {
     // use audiobuffers as a scratch space
-    int32_t len = findSampleEnd(dm.audioBuffers[0], dm.waveBufferLen, 100, 0.05);
+    int32_t len = findSampleEnd(dm.audioBuffers[0], dm.waveBufferLen, 100, 0.03);
     allocSample(dm, drumIndex, len);
     memcpy(dm.drumSamples[drumIndex].samples, dm.audioBuffers[0], len * sizeof(int16_t));
+    memset(dm.audioBuffers[0], 0, dm.waveBufferLen * sizeof(int16_t));
     return;
 }
 
-void makeDrum(DrumMachine &dm, int index, float delay, float startFreq, float ampAttack, float freqDecay, float ampDecay, float noise, float overdrive)
-{
-    // synthesise into the scratch buffer then allocate just enough to encompass it
-    sample_t scratchSample;
-    scratchSample.samples = dm.audioBuffers[0];
-    scratchSample.len = dm.waveBufferLen;
-    createDrum(&scratchSample, samplerate, delay, startFreq, ampAttack, freqDecay, ampDecay, noise, overdrive);
-    autoSample(dm, index);
-    memset(dm.audioBuffers[0], 0, dm.waveBufferLen * sizeof(int16_t));
-}
 
-void makeFM(DrumMachine &dm, int index, float freq, float ampAttack, float modRatio, float modStart, float modDecay, float ampDecay)
+void makeSynth(DrumMachine &dm, int index, synth_t *synth)
 {
     sample_t scratchSample;
     scratchSample.samples = dm.audioBuffers[0];
     scratchSample.len = dm.waveBufferLen;
-    // synthesise into the scratch buffer then allocate just enough to encompass it
-    createFM(&scratchSample, samplerate, freq, ampAttack, modRatio, modStart, modDecay, ampDecay);
+    createSynth(&scratchSample, samplerate, synth);
     autoSample(dm, index);
-    memset(dm.audioBuffers[0], 0, dm.waveBufferLen * sizeof(int16_t));
 }
 
-void createSamples(DrumMachine& dm)
+
+
+void createSamples(DrumMachine& dm, kit_t &kit)
 {
-  for (int i = 0; i < 19; i++)
+
+   // initialise with dummy samples
+  for(int i=0;i<26;i++)
   {
-    allocSample(dm, i, 2200); // 0=silence
+    allocSample(dm, i, 1);
   }
 
   // 8 semitones from middle-c
   int16_t noteFreqs[] = {261, 294, 330, 350, 392, 440, 493, 523};
 
-  for (int i = 1; i < 9; i++)
+  synth_t bass = kit.synths[0];
+
+  // sample 0 is empty and not allocated
+
+  // kit element 0 is the bass and repeated 8 times, for slots 1-9
+  for(int i=1;i<9;i++)
   {
-    makeFM(dm, i, noteFreqs[i - 1] * 0.25, 30, 2.0, 8.0, 50, 80);    
+    bass.startFreq = noteFreqs[i-1] * 0.25;
+    makeSynth(dm, i, &bass);
   }
-  makeDrum(dm, 9, 0.0, 450, 0.1, 15, 50, 0.0, 2.5);    // kick i
-  makeDrum(dm, 10,  0.0, 0, 0.1, 0, 8, 1.0, 0.25);       // hihat j
-  makeDrum(dm, 11,  0.0, 300, 0.1, 100, 18, 1.0, 3.6);  // snare k
-  makeDrum(dm, 12,  0.0, 900, 0.05, 1000, 3, 0.0, 1.0); // click l
-  makeDrum(dm, 13,  0.0, 400, 2, 1000, 15, 0.0, 1.0);   // tom m
-  makeDrum(dm, 14,  0.0, 2000, 1, 200, 200, 0.2, 0.25); // sweep
-  makeDrum(dm, 15,  0.0, 1000, 0.1, 200, 3, 0.0, 1.7);  // teek
-  makeDrum(dm, 16,  0.0, 0.0, 20, 0.0, 300, 1.0, 0.1); // open hat
 
-  // clap
-  makeDrum(dm, 17,  60, 0, 0.1, 100, 19, 1.0, 2.4); // clap
-  createDrum(&dm.drumSamples[17],  samplerate, 0.0, 0, 0.1, 100, 18, 1.0, 8.6);
-  createDrum(&dm.drumSamples[17],  samplerate, 25, 0, 0.1, 100, 19, 1.0, 8.9);
-  createDrum(&dm.drumSamples[17],  samplerate, 55, 0, 0.1, 100, 17, 1.0, 8.4);
-  
-  makeDrum(dm, 18, 0.0, 180, 0.1, 200, 60, 0.0, 3.5); // low kick
+  // the remaining 17 are the drum kit
+  for(int i=9;i<26;i++)    
+  {
+    bass = kit.synths[i-8];
+    makeSynth(dm, i, &bass);
+  }
 
+   
 }
 
 

@@ -4,6 +4,8 @@
 #include "channels.h"
 #include "patternui.h"
 #include "previewui.h"
+#include "kits.h"
+#include "synth.h"
 
 void updatePattern(DrumMachine& dm) {
     setGraphicsModePattern();
@@ -42,6 +44,11 @@ void resetState(DrumMachine& dm)
     dm.beatTime = 0;
     dm.volume = 16;
 
+    strcpy(dm.patternSequence, ""); // reset the pattern sequence
+    dm.patternCursor = 0;
+    dm.patternSeqIndex = 0;
+    dm.patternMode = 0;
+
     // Reset all channels
     for (int chan = 0; chan < nChans; chan++)
     {
@@ -59,10 +66,11 @@ void resetState(DrumMachine& dm)
     recalcChannels(dm);
 
     // Create the drum samples
-    createSamples(dm);
+    dm.kit = 1;
+    createSamples(dm, drumKits[dm.kit]);
 
     // Clear all patterns
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < maxPatterns; i++)
     {
         _setPattern(dm, i);
         clearPattern(dm);

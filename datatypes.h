@@ -69,6 +69,10 @@ struct DrumMachine {
     int16_t pattern = 0;
     int16_t kit = 0;
     int16_t volume = 0; // 16 volume levels
+    char patternSequence[maxPatternSequence];
+    int8_t patternCursor = 0;
+    int8_t patternSeqIndex = 0;
+    int8_t patternMode = 0; // 0 = one pattern, 1 = sequence
 
     cursor_t cursor;
     channel_t channels[nChans];
@@ -76,6 +80,10 @@ struct DrumMachine {
     chanData_t allPatterns[nSteps * nChans * maxPatterns];
     chanData_t clipboard[nSteps * nChans];
 };
+
+
+
+
 
 #endif
 

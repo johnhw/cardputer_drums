@@ -13,16 +13,12 @@
  */
 
 // TODO:
-// Kits, opt 1-10
-// beat runner
-// auto sample allocation (find last non-quiet section, trim there)
-// fix clicking
-// Attack for drums (fix)
-// Filter for drums
+// 20 patterns
+// pattern sequencer (stack at top). need edit keys
+// Kits, opt 1-10 drum editor / drum structs
 // Loop samples
 // Sample tuning
 // Channel filters? (e.g. channel sidebar?)
-// splash screen
 
 // maybe:
 // sd card reading?
@@ -69,8 +65,8 @@ void splash()
   // draw text in small font below
   M5Cardputer.Display.setFont(&fonts::Font0);
   M5Cardputer.Display.setTextColor(TFT_GREEN);
-  M5Cardputer.Display.drawString("Williamson", M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 + 40);
-  M5Cardputer.Display.drawString("Industries", M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 + 50);
+  M5Cardputer.Display.drawString("Williamson Industries", M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 + 50);
+  
 
 
 }
@@ -78,8 +74,7 @@ void splash()
 void setup(void)
 {  
   initCardputer();
-  splash();
-  createSamples(machine);
+  splash();  
   resetState(machine);
 }
 

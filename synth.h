@@ -1,11 +1,41 @@
 #ifndef SYNTH_H
+#define SYNTH_H
 #include <stdint.h>
 #include "datatypes.h"
 
 float iirAlpha(int sr, float freq);
 float halfLifeTime(int sr, float t);
 
+typedef struct synth_t
+{
+  float delay;
+  float startFreq;
+  float endFreq;
+  float freqDecay;
+  float ampAttack;
+  float ampDecay;
+  float noise;  
+  float modRatio;
+  float modStart;
+  float modEnd;
+  float modDecay;  
+  float overdrive;
+  float lowpassStart;
+  float lowpassEnd;
+  float lowpassDecay;
+} synth_t;
+
+struct kit_t
+{
+  const synth_t *synths;
+  const int nSynths;
+  const char *name;
+};
+
+
 // times in milliseconds, frequencies in hZ
-void createDrum(sample_t *sample, int32_t samplerate, float delay, float startFreq, float ampAttack, float freqDecay, float ampDecay, float noise, float overdrive);
-void createFM(sample_t *sample,  int32_t samplerate, float freq, float ampAttack, float modRatio, float modStart, float modDecay, float ampDecay);
+
+void createSynth(sample_t *sample, int32_t samplerate, synth_t *synth);
+
+
 #endif

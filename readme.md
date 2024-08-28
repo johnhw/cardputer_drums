@@ -57,3 +57,18 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `fn+c` cut current pattern to clipboard
 * `fn+v` paste current pattern to clipboard
 * NOTE: all clipboard functions operate only on currently enabled channels. So e.g. solo'ing one channel allows you to selectively delete/copy it (or muting all but three channels, etc.)
+
+
+## Drumkit
+
+* `a` -> `h` bass, major scale
+* `i` kick
+* `j` closed hat
+* `k` snare 
+* `l` click/rimshot
+* `m` tom
+* `n` sweep
+* `o` beep
+* `p` open hat
+* `q` clap
+* `r` low kick
