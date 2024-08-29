@@ -1,8 +1,9 @@
 # Cardputer drums
-
 ![cardputer_drums.png](cardputer_drums.png)
 
 This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stack.com/products/m5stack-cardputer-kit-w-m5stamps3?srsltid=AfmBOoqHMPXzj-fobFJN0uUYR1yChvbehNYaBXx4sJz9z3Eqjelnhx3n). 
+
+<iframe width="1280" height="720" src="https://www.youtube.com/embed/r_0vd7Hbe3E" title="M5Cardputer drum machine" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Features
 
