@@ -290,7 +290,7 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   int16_t digit = getDigitPressed(status) - 1;
   if (digit >= 0 && digit < nChans)
   {
-    if (status.alt)
+    if (status.shift)
       toggleSolo(dm, digit);
     else
       toggleMute(dm, digit);

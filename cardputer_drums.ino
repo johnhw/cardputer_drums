@@ -26,12 +26,12 @@
 
 
 #include <M5Cardputer.h>
-#include "datatypes.h"
-#include "config.h"
-#include "audio.h"
-#include "ui.h"
-#include "patternui.h"
-#include "previewui.h"
+#include "src/datatypes.h"
+#include "src/config.h"
+#include "src/audio.h"
+#include "src/ui.h"
+#include "src/patternui.h"
+#include "src/previewui.h"
 
 // Function Declarations
 void initCardputer();

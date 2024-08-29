@@ -1,5 +1,7 @@
 # Cardputer drums
 
+![cardputer_drums.png](cardputer_drums.png)
+
 This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stack.com/products/m5stack-cardputer-kit-w-m5stamps3?srsltid=AfmBOoqHMPXzj-fobFJN0uUYR1yChvbehNYaBXx4sJz9z3Eqjelnhx3n). 
 
 ## Features
@@ -61,7 +63,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 
 ### channel
 * `fn+<n>` mute channel `n`
-* `fn+alt+<n>` solo channel `n`
+* `fn+shift+<n>` solo channel `n`
 
 ### Kits
 * `alt+<n>` select drum kit `n` (note: this will cause a delay as the kit is synthesised)
