@@ -13,9 +13,9 @@
  */
 
 // TODO:
-// 20 patterns
-// pattern sequencer (stack at top). need edit keys
-// Kits, opt 1-10 drum editor / drum structs
+
+// switch about fn+opt keys
+// kit editor
 // Loop samples
 // Sample tuning
 // Channel filters? (e.g. channel sidebar?)

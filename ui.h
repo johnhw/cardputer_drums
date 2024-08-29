@@ -11,7 +11,8 @@ void resetState(DrumMachine& dm);
 void updatePattern(DrumMachine& dm);
 void setPlayMode(DrumMachine &dm, int mode);
 void updateMix(DrumMachine& dm, int16_t step, int16_t chan);
-
+void setKit(DrumMachine& dm, int kit);
 void requestMix(DrumMachine& dm);
+void nextPattern(DrumMachine &dm);
 
 #endif

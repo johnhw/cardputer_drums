@@ -13,7 +13,10 @@ float halfLifeTime(int sr, float t)
 }
 
 
-
+inline float randFloat()
+{
+  return random(-32767, 32767) / 32767.0;
+}
 
 void createSynth(sample_t *sample, int32_t samplerate, synth_t *synth)
 {
@@ -77,7 +80,7 @@ void createSynth(sample_t *sample, int32_t samplerate, synth_t *synth)
 
     out = cos(ph + cos(modPh) * mod);
 
-    out += noise * random(-32767, 32767) / 32767.0;
+    out += noise * randFloat();
     out *= amp;
     out *= overdrive;
     if (out > 1.0)

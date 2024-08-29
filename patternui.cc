@@ -6,33 +6,32 @@
 #include "ui.h"
 #include "pattern.h"
 
-void getCursorPixelPos(DrumMachine& dm, int16_t step, int16_t chan, int16_t& x, int16_t& y) {
-    x = (step + (step / 4)) * 12 + 12;
-    y = chan * 12 + 12;
-}
-
-
-void moveCursor(DrumMachine& dm, int x, int y)
+void getCursorPixelPos(DrumMachine &dm, int16_t step, int16_t chan, int16_t &x, int16_t &y)
 {
-    drawCursor(dm, 0);
-    dm.cursor.step += x;
-    dm.cursor.chan += y;
-
-    // Boundaries checking
-    if (dm.cursor.step < 0)
-        dm.cursor.step = 0;
-    if (dm.cursor.chan < 0)
-        dm.cursor.chan = 0;
-    if (dm.cursor.step >= nSteps)
-        dm.cursor.step = nSteps - 1;
-    if (dm.cursor.chan >= nChans)
-        dm.cursor.chan = nChans - 1;
-
-    dm.cursor.dirty = 1;
+  x = (step + (step / 4)) * 12 + 12;
+  y = chan * 12 + 12;
 }
 
+void moveCursor(DrumMachine &dm, int x, int y)
+{
+  drawCursor(dm, 0);
+  dm.cursor.step += x;
+  dm.cursor.chan += y;
 
-void adjSwing(DrumMachine& dm, int adj)
+  // Boundaries checking
+  if (dm.cursor.step < 0)
+    dm.cursor.step = 0;
+  if (dm.cursor.chan < 0)
+    dm.cursor.chan = 0;
+  if (dm.cursor.step >= nSteps)
+    dm.cursor.step = nSteps - 1;
+  if (dm.cursor.chan >= nChans)
+    dm.cursor.chan = nChans - 1;
+
+  dm.cursor.dirty = 1;
+}
+
+void adjSwing(DrumMachine &dm, int adj)
 {
   dm.swing += adj;
   if (dm.swing < 0)
@@ -43,7 +42,7 @@ void adjSwing(DrumMachine& dm, int adj)
   drawStatus(dm);
 }
 
-void adjBpm(DrumMachine& dm, int adj)
+void adjBpm(DrumMachine &dm, int adj)
 {
   dm.bpm += adj;
   if (dm.bpm < minBPM)
@@ -56,7 +55,7 @@ void adjBpm(DrumMachine& dm, int adj)
 }
 
 // set volume
-void adjVolume(DrumMachine& dm, int adj)
+void adjVolume(DrumMachine &dm, int adj)
 {
   dm.volume += adj;
   if (dm.volume < 0)
@@ -64,14 +63,15 @@ void adjVolume(DrumMachine& dm, int adj)
   if (dm.volume > 16)
     dm.volume = 16;
   int16_t vol = dm.volume * 16;
-  if(vol>255) vol = 255;
+  if (vol > 255)
+    vol = 255;
   M5Cardputer.Speaker.setVolume(vol);
   drawStatus(dm);
 }
 
 // increment/decrement the kickDelay on the current
 // cursor element
-void adjCursorKick(DrumMachine& dm, int adj)
+void adjCursorKick(DrumMachine &dm, int adj)
 {
   int index = dm.cursor.step + nSteps * dm.cursor.chan;
   int kick = dm.currentPattern[index].kickDelay + adj;
@@ -83,9 +83,6 @@ void adjCursorKick(DrumMachine& dm, int adj)
   requestMix(dm);
 }
 
-
-
-
 void updateCursor(DrumMachine &dm)
 {
   dm.cursor.flash += 1;
@@ -96,25 +93,39 @@ void updateCursor(DrumMachine &dm)
     dm.cursor.on = !dm.cursor.on;
     dm.cursor.dirty = 1;
   }
-  if(dm.cursor.dirty)
+  if (dm.cursor.dirty)
   {
     drawCursor(dm, 0); // draw the NEXT character to avoid overlap when kicking forward
     // flash current cursor
     if (dm.cursor.on)
-        drawCursor(dm, 2);
+      drawCursor(dm, 2);
     else
-        drawCursor(dm, 1);
-    dm.cursor.dirty = 0;    
+      drawCursor(dm, 1);
+    dm.cursor.dirty = 0;
+  }
+}
+
+void altKey(DrumMachine &dm, Keyboard_Class::KeysState status)
+{
+  int16_t digit = getDigitPressed(status) - 1;
+  if (digit >= 0 && digit < dm.nKits)
+  {
+    M5Cardputer.Speaker.setVolume(0); // disable audio while changing kit
+    // potentially show a "loading kit" status line here...
+    drawKitLoading(dm, digit);
+    setKit(dm, digit);
+    drawStatus(dm);
+    adjVolume(dm, 0); // restore the audio
   }
 }
 
 void patternModeKeys(DrumMachine &dm)
 {
 
-  if(M5Cardputer.BtnA.wasClicked())
+  if (M5Cardputer.BtnA.wasClicked())
   {
-     M5Cardputer.update();
-     setPlayMode(dm, 1);
+    M5Cardputer.update();
+    setPlayMode(dm, 1);
   }
   if (M5Cardputer.Keyboard.isChange())
   {
@@ -122,6 +133,11 @@ void patternModeKeys(DrumMachine &dm)
     {
       Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
 
+      // kit select
+      if (status.alt)
+      {
+        altKey(dm, status);
+      }
       if (status.opt)
       {
         channelKey(dm, status);
@@ -137,7 +153,7 @@ void patternModeKeys(DrumMachine &dm)
         {
           // set characters for sample entry
           if (status.del)
-          {            
+          {
             setCursorChar(dm, 0); // clear
           }
           if (status.word.size() > 0)
@@ -166,56 +182,82 @@ void patternModeKeys(DrumMachine &dm)
   }
 }
 
+// move the cursor left or right in the pattern sequence
 void patternCursorMove(DrumMachine &dm, int step)
 {
-
+  int patternLength = strlen(dm.patternSequence);
+  if (dm.patternCursor < 0)
+    dm.patternCursor = 0;
+  if (dm.patternCursor >= patternLength)
+    dm.patternCursor = patternLength - 1;
 }
 
+// insert the current pattern number at the cursor position
 void patternInsertCurrent(DrumMachine &dm)
 {
-
-
+  int patternLength = strlen(dm.patternSequence);
+  if (patternLength >= maxPatternSequence)
+    return;
+  for (int i = patternLength; i > dm.patternCursor; i--)
+  {
+    dm.patternSequence[i] = dm.patternSequence[i - 1];
+  }
+  dm.patternSequence[dm.patternCursor] = dm.pattern;
+  dm.patternCursor++;
+  drawTopLine(dm);
 }
 
+// remove the current pattern number at the cursor position
+// (assuming there is one)
 void patternDeleteCurrent(DrumMachine &dm)
 {
-
-
+  int patternLength = strlen(dm.patternSequence);
+  if (patternLength == 0)
+    return;
+  for (int i = dm.patternCursor; i < patternLength; i++)
+  {
+    dm.patternSequence[i] = dm.patternSequence[i + 1];
+  }
+  dm.patternCursor--;
+  drawTopLine(dm);
 }
 
+// toggle between current pattern and pattern sequence mode
 void patternSwitchMode(DrumMachine &dm)
 {
-
+  dm.patternModeSwitch=1; // request a switch
+  
+  drawTopLine(dm);
 }
 
-void channelKey(DrumMachine& dm, Keyboard_Class::KeysState status)
+void channelKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
-    int16_t digit = getDigitPressed(status) - 1;
-    if(digit>=0 && digit<nChans)
-      {
-        if(status.alt)
-          toggleSolo(dm, digit);          
-        else
-          toggleMute(dm, digit);          
-      }          
 
   if (M5Cardputer.Keyboard.isKeyPressed(','))
     patternCursorMove(dm, -1);
   if (M5Cardputer.Keyboard.isKeyPressed('/'))
     patternCursorMove(dm, 1);
   if (M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER))
-      patternInsertCurrent(dm);
+    patternInsertCurrent(dm);
   if (M5Cardputer.Keyboard.isKeyPressed(KEY_BACKSPACE))
-      patternDeleteCurrent(dm);
+    patternDeleteCurrent(dm);
   if (M5Cardputer.Keyboard.isKeyPressed('`'))
-      patternSwitchMode(dm);
-  
+    patternSwitchMode(dm);
+
+  int16_t digit = getDigitPressed(status);
+  if (digit >= 0)
+  {
+    if (status.shift)
+      setPattern(dm, digit + 10);
+    else
+      setPattern(dm, digit);
+  }
 }
 
-void fnKey(DrumMachine& dm, Keyboard_Class::KeysState status)
+void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
   // bpm and swing
-  
+
   if (M5Cardputer.Keyboard.isKeyPressed(','))
     adjSwing(dm, -1);
   if (M5Cardputer.Keyboard.isKeyPressed('/'))
@@ -228,7 +270,6 @@ void fnKey(DrumMachine& dm, Keyboard_Class::KeysState status)
     adjVolume(dm, -1);
   if (M5Cardputer.Keyboard.isKeyPressed(']'))
     adjVolume(dm, 1);
-  
 
   if (M5Cardputer.Keyboard.isKeyPressed('c'))
     copyPattern(dm);
@@ -245,199 +286,239 @@ void fnKey(DrumMachine& dm, Keyboard_Class::KeysState status)
     selectiveClearPattern(dm);
     updatePattern(dm);
   }
- 
 
-  int16_t digit = getDigitPressed(status);
-  if(digit>=0)
+  int16_t digit = getDigitPressed(status) - 1;
+  if (digit >= 0 && digit < nChans)
   {
-    if(status.alt)
-      setPattern(dm, digit+10);
+    if (status.alt)
+      toggleSolo(dm, digit);
     else
-      setPattern(dm, digit);
+      toggleMute(dm, digit);
   }
-  
 }
 
-void renderCursor(DrumMachine& dm, int state)
+void renderCursor(DrumMachine &dm, int state)
 {
-    char s[2] = "X";
-    int16_t drawX, drawY, kickDelay, kickWidth;
+  char s[2] = "X";
+  int16_t drawX, drawY, kickDelay, kickWidth;
 
-    // Fetch cursor position and properties
-    getCursorPixelPos(dm, dm.cursor.step, dm.cursor.chan, drawX, drawY);
-    kickDelay = getKickDelay(dm, dm.cursor.step, dm.cursor.chan);
-    kickWidth = 12 * kickDelay / kickSubdiv;
-    drawY += dm.cursor.height / 2;
-    drawX += kickWidth; // shift left for delayed onset
+  // Fetch cursor position and properties
+  getCursorPixelPos(dm, dm.cursor.step, dm.cursor.chan, drawX, drawY);
+  kickDelay = getKickDelay(dm, dm.cursor.step, dm.cursor.chan);
+  kickWidth = 12 * kickDelay / kickSubdiv;
+  drawY += dm.cursor.height / 2;
+  drawX += kickWidth; // shift left for delayed onset
 
-    // Fetch cursor character and velocity
-    char ch;
-    int16_t vel;
-    getCursorChar(dm, ch, vel);
-    s[0] = ch;
+  // Fetch cursor character and velocity
+  char ch;
+  int16_t vel;
+  getCursorChar(dm, ch, vel);
+  s[0] = ch;
 
-    int16_t charColor = RGB565(0, vel * 3 - ((dm.cursor.step % 2) ? 0 : 2), 0);
-    int boxOffX = -4;
-    int boxOffY = -2;
-    int boxX = drawX + boxOffX;
-    int boxY = drawY + boxOffY;
+  int16_t charColor = RGB565(0, vel * 3 - ((dm.cursor.step % 2) ? 0 : 2), 0);
+  int boxOffX = -4;
+  int boxOffY = -2;
+  int boxX = drawX + boxOffX;
+  int boxY = drawY + boxOffY;
 
-    // Render cursor based on state
-    if (state == 0) // no flash
-    {
-        M5Cardputer.Display.fillRect(boxX - kickWidth, boxY, dm.cursor.width + kickWidth, dm.cursor.height, charColor);        
-        M5Cardputer.Display.drawString(s, drawX, drawY - dm.cursor.height / 2);
-        
-    }
-    else if (state == 1) // flash on
-    {
-        M5Cardputer.Display.fillRect(boxX, boxY, dm.cursor.width, dm.cursor.height, TFT_WHITE);
-    }
-    else if (state == 2) // flash off
-    {
-        M5Cardputer.Display.fillRect(boxX - kickWidth, boxY, dm.cursor.width + kickWidth, dm.cursor.height, charColor);
-        M5Cardputer.Display.drawRect(boxX, boxY, dm.cursor.width, dm.cursor.height, TFT_WHITE);
-        M5Cardputer.Display.drawString(s, drawX, drawY - dm.cursor.height / 2);
-    }
+  // Render cursor based on state
+  if (state == 0) // no flash
+  {
+    M5Cardputer.Display.fillRect(boxX - kickWidth, boxY, dm.cursor.width + kickWidth, dm.cursor.height, charColor);
+    M5Cardputer.Display.drawString(s, drawX, drawY - dm.cursor.height / 2);
+  }
+  else if (state == 1) // flash on
+  {
+    M5Cardputer.Display.fillRect(boxX, boxY, dm.cursor.width, dm.cursor.height, TFT_WHITE);
+  }
+  else if (state == 2) // flash off
+  {
+    M5Cardputer.Display.fillRect(boxX - kickWidth, boxY, dm.cursor.width + kickWidth, dm.cursor.height, charColor);
+    M5Cardputer.Display.drawRect(boxX, boxY, dm.cursor.width, dm.cursor.height, TFT_WHITE);
+    M5Cardputer.Display.drawString(s, drawX, drawY - dm.cursor.height / 2);
+  }
 }
 
-void drawCursor(DrumMachine& dm, int state)
+void drawCursor(DrumMachine &dm, int state)
 {
-    
-    // "underdraw" next step so that overlaps when kicking forward render correctly
-    if (dm.cursor.step < nSteps - 1)
-    {
-        dm.cursor.step++;
-        renderCursor(dm, 0);
-        dm.cursor.step--;
-    }
 
-    renderCursor(dm, state);
+  // "underdraw" next step so that overlaps when kicking forward render correctly
+  if (dm.cursor.step < nSteps - 1)
+  {
+    dm.cursor.step++;
+    renderCursor(dm, 0);
+    dm.cursor.step--;
+  }
+
+  renderCursor(dm, state);
 }
 
 const int16_t statusColor = RGB565(5, 5, 5);
 
 void drawTopLine(DrumMachine &dm)
 {
-    int topHeight = 12; 
-    char statusLine[256];
-    const char *patternNames = "0123456789ABCDEFGHIJ";
+  int topHeight = 12;
+  char statusLine[256];
+  const char *patternNames = "0123456789ABCDEFGHIJ";
+  M5Cardputer.Display.setFont(&fonts::Font0);
+  M5Cardputer.Display.setTextColor(GREEN);
+  // Clear the status bar area
+  M5Cardputer.Display.fillRect(0, 0, M5Cardputer.Display.width(), topHeight, TFT_BLACK);
+  snprintf(statusLine, 255, "%c", patternNames[dm.pattern]);
+  M5Cardputer.Display.drawString(statusLine, 10, 3);
 
-    // Clear the status bar area
-    M5Cardputer.Display.fillRect(0, 0, M5Cardputer.Display.width(), topHeight, TFT_BLACK);    
-    snprintf(statusLine, 255, "%c", patternNames[dm.pattern]);
-    M5Cardputer.Display.drawString(statusLine, 10, 3);
+  // Now show the pattern sequence
+  // for each character in dm.patternSequence, draw it
+  for (int i = 0; i < maxPatternSequence; i++)
+  {
+    if (dm.patternSequence[i] == 0)
+      break;
+    // in pattern play mode, highlight the current playing pattern
+    if (dm.patternMode == 1)
+    {
+      if (dm.patternSeqIndex == i)
+        M5Cardputer.Display.setTextColor(RED);
+      else
+        M5Cardputer.Display.setTextColor(DARKGREY);
+    }
+    snprintf(statusLine, 255, "%c", patternNames[dm.patternSequence[i]]);
+    M5Cardputer.Display.drawString(statusLine, 40 + i * 10, 3);
+    // if we're on the cursor, draw an underline
+    if (i == dm.patternCursor)
+    {
+      M5Cardputer.Display.drawString("_", 40 + i * 10, 3);
+    }
+  }
+  M5Cardputer.Display.setTextColor(WHITE);
+  M5Cardputer.Display.setFont(&fonts::Font2);
 }
-
-
 
 // render the running line at the top showing the current play position
 void renderBeatLine(DrumMachine &dm)
 {
-    int16_t x, x2, y;
-    static const int beatColor = RGB565(0, 50, 0);    
-    uint32_t ms = millis();
-        
-    int32_t sampleTime;
-    // from change in milliseconds work out how many samples have elapsed
-    sampleTime = (ms - dm.syncMillis) * samplerate / 1000;
-    //sampleTime -= dm.stepSamples; // adjust for sloppy timing of change
-    int16_t step = sampleTime / dm.stepSamples;
-    if(step<0) step += nSteps;
-    
-    
+  int16_t x, x2, y;
+  static const int beatColor = RGB565(0, 50, 0);
+  uint32_t ms = millis();
 
+  int32_t sampleTime;
+  // from change in milliseconds work out how many samples have elapsed
+  sampleTime = (ms - dm.syncMillis) * samplerate / 1000;
+  // sampleTime -= dm.stepSamples; // adjust for sloppy timing of change
+  int16_t step = sampleTime / dm.stepSamples;
+  if (step < 0)
+    step += nSteps;
 
-    if(step != dm.beatTime)
-    {
-        getCursorPixelPos(dm, dm.beatTime, 0, x, y);        
-        // Clear the old beat line
-        M5Cardputer.Display.fillRect(x, y-1, dm.cursor.width, 2, TFT_BLACK);
-        // draw the new one
-        getCursorPixelPos(dm, step, 0, x, y);                
-        M5Cardputer.Display.fillRect(x, y-1, dm.cursor.width, 2, beatColor);        
-        dm.beatTime = step;
-    }
-
+  if (step != dm.beatTime)
+  {
+    getCursorPixelPos(dm, dm.beatTime, 0, x, y);
+    // Clear the old beat line
+    M5Cardputer.Display.fillRect(x, y - 1, dm.cursor.width, 2, TFT_BLACK);
+    // draw the new one
+    getCursorPixelPos(dm, step, 0, x, y);
+    M5Cardputer.Display.fillRect(x, y - 1, dm.cursor.width, 2, beatColor);
+    dm.beatTime = step;
+  }
 }
 
-
-void drawStatus(DrumMachine& dm)
+void drawKitLoading(DrumMachine &dm, int kit)
 {
-    int statusHeight = 16;
-    char statusLine[256];
+  int statusHeight = 16;
+  char statusLine[256];
 
-    // Set font for the display
-    M5Cardputer.Display.setFont(&fonts::Font0);
-      // Set text color to green for the status line
-    M5Cardputer.Display.setTextColor(GREEN);
+  // Set font for the display
+  M5Cardputer.Display.setFont(&fonts::Font0);
+  // Set text color to green for the status line
+  M5Cardputer.Display.setTextColor(BLACK);
 
-    drawTopLine(dm);
-    // Clear the status bar area
-    M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_BLACK);
+  // Clear the status bar area
+  M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_GREEN);
 
-  
+  // Create the status line with BPM, Swing, Pattern, and Kit information
+  snprintf(statusLine, 255, "LOADING KIT %02d...", kit);
+  M5Cardputer.Display.drawString(statusLine, 10, M5Cardputer.Display.height() - statusHeight);
+  M5Cardputer.Display.setTextColor(WHITE);
+  M5Cardputer.Display.setFont(&fonts::Font2);
+}
 
-    // Create the status line with BPM, Swing, Pattern, and Kit information
-    snprintf(statusLine, 255, "BPM %03d VOL %02d SW %02d KT %02d", dm.bpm, dm.volume, dm.swing,  dm.kit);
-    M5Cardputer.Display.drawString(statusLine, 10, M5Cardputer.Display.height() - statusHeight);
+void drawStatus(DrumMachine &dm)
+{
+  int statusHeight = 16;
+  char statusLine[256];
 
-    // Recalculate channels to determine if any are soloed
-    int solos = recalcChannels(dm);
+  // Set font for the display
+  M5Cardputer.Display.setFont(&fonts::Font0);
+  // Set text color to green for the status line
+  M5Cardputer.Display.setTextColor(GREEN);
+  // Clear the status bar area
+  M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_BLACK);
 
-    int32_t drawX = 180;
-    for (int i = 0; i < nChans; i++)
+  // Create the status line with BPM, Swing, Pattern, and Kit information
+  snprintf(statusLine, 255, "BPM %03d VOL %02d SW %02d KT %02d", dm.bpm, dm.volume, dm.swing, dm.kit);
+  M5Cardputer.Display.drawString(statusLine, 10, M5Cardputer.Display.height() - statusHeight);
+
+  // Recalculate channels to determine if any are soloed
+  int solos = recalcChannels(dm);
+
+  int32_t drawX = 180;
+  for (int i = 0; i < nChans; i++)
+  {
+    snprintf(statusLine, 255, "%01d", i + 1);
+
+    // Check if the channel is enabled
+    if (dm.channels[i]._enabled)
     {
-        snprintf(statusLine, 255, "%01d", i + 1);
-
-        // Check if the channel is enabled
-        if (dm.channels[i]._enabled)
-        {
-            // Set text color based on whether there are soloed channels
-            if (solos != 0) // Show red color if soloed channels exist
-            {
-                M5Cardputer.Display.setTextColor(RED);
-            }
-            else // No solos, show all channels in green
-            {
-                M5Cardputer.Display.setTextColor(GREEN);
-            }
-        }
-        else // Gray out disabled channels
-        {
-            M5Cardputer.Display.setTextColor(TFT_DARKGREY);
-        }
-
-        // Draw the channel number
-        M5Cardputer.Display.drawString(statusLine, drawX, M5Cardputer.Display.height() - statusHeight);
-        drawX += 6; // Move to the next position for the next channel
+      // Set text color based on whether there are soloed channels
+      if (solos != 0) // Show red color if soloed channels exist
+      {
+        M5Cardputer.Display.setTextColor(RED);
+      }
+      else // No solos, show all channels in green
+      {
+        M5Cardputer.Display.setTextColor(GREEN);
+      }
     }
-    // Reset text color to white and font to Font2
-    M5Cardputer.Display.setTextColor(WHITE);
-    M5Cardputer.Display.setFont(&fonts::Font2);
+    else // Gray out disabled channels
+    {
+      M5Cardputer.Display.setTextColor(TFT_DARKGREY);
+    }
+
+    // Draw the channel number
+    M5Cardputer.Display.drawString(statusLine, drawX, M5Cardputer.Display.height() - statusHeight);
+    drawX += 6; // Move to the next position for the next channel
+  }
+
+  drawTopLine(dm);
+
+  // Reset text color to white and font to Font2
+  M5Cardputer.Display.setTextColor(WHITE);
+  M5Cardputer.Display.setFont(&fonts::Font2);
 }
 
-void setGraphicsModePattern() {
-    M5Cardputer.Display.clearDisplay(TFT_BLACK);
-    M5Cardputer.Display.setFont(&fonts::Font2);
-    M5Cardputer.Display.setTextDatum(top_left);
-    M5Cardputer.Display.setTextColor(WHITE);
+void setGraphicsModePattern()
+{
+  M5Cardputer.Display.clearDisplay(TFT_BLACK);
+  M5Cardputer.Display.setFont(&fonts::Font2);
+  M5Cardputer.Display.setTextDatum(top_left);
+  M5Cardputer.Display.setTextColor(WHITE);
 }
 
-void redrawPattern(DrumMachine& dm) {
-    int oldStep = dm.cursor.step;
-    int oldChan = dm.cursor.chan;
+void redrawPattern(DrumMachine &dm)
+{
+  int oldStep = dm.cursor.step;
+  int oldChan = dm.cursor.chan;
 
-    for (int i = 0; i < nChans; i++) {
-        for (int j = 0; j < nSteps; j++) {
-            dm.cursor.step = j;
-            dm.cursor.chan = i;
-            dm.cursor.dirty = 1;
-            drawCursor(dm, 0);
-        }
+  for (int i = 0; i < nChans; i++)
+  {
+    for (int j = 0; j < nSteps; j++)
+    {
+      dm.cursor.step = j;
+      dm.cursor.chan = i;
+      dm.cursor.dirty = 1;
+      drawCursor(dm, 0);
     }
-    dm.cursor.step = oldStep;
-    dm.cursor.chan = oldChan;
+  }
+  dm.cursor.step = oldStep;
+  dm.cursor.chan = oldChan;
 }
 
 // normal pattern mode
@@ -447,5 +528,4 @@ void patternModeUpdate(DrumMachine &dm)
   renderBeatLine(dm);
   patternModeKeys(dm);
   feedPatternBuffers(dm);
-  
 }

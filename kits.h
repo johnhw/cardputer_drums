@@ -3,5 +3,6 @@
 #include "synth.h"
 
 extern kit_t drumKits[];
+extern const int nDrumKits;
 
 #endif

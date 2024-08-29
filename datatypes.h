@@ -73,7 +73,9 @@ struct DrumMachine {
     int8_t patternCursor = 0;
     int8_t patternSeqIndex = 0;
     int8_t patternMode = 0; // 0 = one pattern, 1 = sequence
-
+    int8_t patternModeSwitch = 0; // set to indicate that the pattern should switch at the next mix!
+    int16_t nKits; // number of kits available (set at start)
+    
     cursor_t cursor;
     channel_t channels[nChans];
     chanData_t* currentPattern;

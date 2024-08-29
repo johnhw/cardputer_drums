@@ -6,6 +6,7 @@ constexpr synth_t fmBass = {
     .freqDecay = 0,
     .ampAttack = 15,
     .ampDecay = 80,    
+    .modStart = 2.0,
     .modDecay = 50,
     .overdrive = 1.0    
   };
@@ -267,7 +268,7 @@ constexpr synth_t house_closedCowbell = {
 };
 
 constexpr synth_t house_crash = {
-    .startFreq=500,
+    .startFreq=5000,
     .ampAttack=2,
     .ampDecay=190,
     .noise=0.1,
@@ -292,12 +293,293 @@ constexpr kit_t houseKit = {
 
 // Minimal techno kit
 
+constexpr synth_t min_fmBass = {
+    .startFreq = 0,
+    .freqDecay = 0,
+    .ampAttack = 5,
+    .ampDecay = 30,    
+    .modRatio = 8.0,
+    .modStart = 4.0,
+    .modEnd = 0.0,
+    .modDecay = 8,
+    .overdrive = 1.5    
+  };
+
+constexpr synth_t min_kickDrum = {
+.startFreq = 220,
+.freqDecay = 35,
+.ampAttack = 0.1,
+.ampDecay = 10,    
+.overdrive = 3.0,
+.lowpassStart = 500,
+};
+
+constexpr synth_t min_hihatDrum = {
+.ampAttack = 0.1,
+.ampDecay = 2,
+.noise = 1.0,
+.overdrive = 0.25
+};
+
+constexpr synth_t min_snareDrum = {
+.startFreq=600,
+.freqDecay = 100,
+.ampAttack = 0.5,
+.ampDecay = 3,
+.noise = 0.7,
+.overdrive = 3.6,
+.lowpassStart = 1000,        
+.lowpassDecay = 10,
+};
+
+constexpr synth_t min_clickDrum = {
+.ampAttack = 0.1,    
+.ampDecay = 0.25,
+.noise = 1.0,
+.overdrive = 0.5,  
+};
+
+constexpr synth_t min_tomDrum = {
+.startFreq=500,
+.freqDecay = 30,
+.ampAttack = 2,    
+.ampDecay = 8,
+.overdrive = 0.6
+};
+
+constexpr synth_t min_sweepDrum = {
+.startFreq=1000,
+.freqDecay = 5,
+.ampAttack = 3,
+.ampDecay = 20,
+.noise = 0.5,
+.overdrive = 0.2
+};
+
+constexpr synth_t min_teekDrum = {
+    .startFreq=2000,
+    .freqDecay = 20,
+    .ampAttack = 0.05,        
+    .ampDecay = 1,
+    .overdrive = 0.5
+};
+
+constexpr synth_t min_openHat = {                
+    .ampAttack = 7,
+    .ampDecay = 11,
+    .noise=1.0,
+    .overdrive = 0.1
+};
+
+constexpr synth_t min_clapDrum = {
+    .startFreq=0,
+    .freqDecay = 100,
+    .ampAttack = 0.1,
+    .ampDecay = 6,
+    .noise = 1,
+    .overdrive = 0.4
+};
+
+constexpr synth_t min_dirtyBass = {
+    .startFreq=400,
+    .ampAttack=10,
+    .ampDecay=30,
+    .modRatio = 0.25,
+    .modStart = 10.0,
+    .modDecay = 120,
+    .overdrive = 1.0
+};
+
+constexpr synth_t min_cowbell = {
+    .startFreq=1200,
+    .ampAttack=10,
+    .ampDecay=8,
+    .modRatio=6.321,
+    .modStart = 2.0,        
+    .modDecay = 3,
+    .overdrive = 0.25,
+};
+
+constexpr synth_t min_closedCowbell = {
+    .startFreq=1200,
+    .ampAttack=10,
+    .ampDecay=8,
+    .modRatio=6.321,
+    .modStart = 0.1,        
+    .modDecay = 2,
+    .overdrive = 0.2,
+};
+
+constexpr synth_t min_crash = {
+    .startFreq=5000,
+    .ampAttack=2,
+    .ampDecay=19,
+    .noise=0.1,
+    .modRatio=6.321,
+    .modStart = 5000.0,        
+    .modDecay = 5,
+    .overdrive = 0.5,
+    .lowpassStart=3000,
+    .lowpassDecay=90,        
+};
+
+
+constexpr synth_t minKitDrums[] = {min_fmBass, min_kickDrum, min_hihatDrum, min_snareDrum,min_clickDrum, min_tomDrum, min_sweepDrum, min_teekDrum, min_openHat, min_clapDrum, min_dirtyBass, min_cowbell,min_closedCowbell, min_crash, empty, empty, empty};
+
+constexpr kit_t minKit = {
+  .synths = minKitDrums,
+  .nSynths = 17,
+  .name = "Minimal"
+};
+
+
 // Gabber kit
+
+
+constexpr synth_t gab_fmBass = {
+    .startFreq = 0,
+    .freqDecay = 0,
+    .ampAttack = 5,
+    .ampDecay = 30,    
+    .modRatio = 8.0,
+    .modStart = 4.0,
+    .modEnd = 0.0,
+    .modDecay = 8,
+    .overdrive = 1.5    
+  };
+
+constexpr synth_t gab_kickDrum = {
+.startFreq = 320,
+.freqDecay = 45,
+.ampAttack = 0.1,
+.ampDecay = 50,    
+.overdrive = 25.0,
+};
+
+constexpr synth_t gab_hihatDrum = {
+.ampAttack = 0.1,
+.ampDecay = 5,
+.noise = 1.0,
+.overdrive = 5.0
+};
+
+constexpr synth_t gab_snareDrum = {
+.startFreq=900,
+.freqDecay = 20,
+.ampAttack = 0.5,
+.ampDecay = 35,
+.noise = 0.7,
+.overdrive = 5.6,
+.lowpassStart = 1000,        
+.lowpassDecay = 10,
+};
+
+constexpr synth_t gab_clickDrum = {
+.ampAttack = 0.1,    
+.ampDecay = 1,
+.noise = 1.0,
+.overdrive = 3.5,  
+};
+
+constexpr synth_t gab_tomDrum = {
+.startFreq=600,
+.freqDecay = 200,
+.ampAttack = 2,    
+.ampDecay = 10,
+.overdrive = 1.5
+};
+
+constexpr synth_t gab_sweepDrum = {
+.startFreq=400,
+.freqDecay = 15,
+.ampAttack = 3,
+.ampDecay = 30,
+.noise = 0.5,
+.overdrive = 5.0,
+};
+
+constexpr synth_t gab_teekDrum = {
+    .startFreq=2000,
+    .freqDecay = 20,
+    .ampAttack = 0.05,        
+    .ampDecay = 1,
+    .overdrive = 1.5
+};
+
+constexpr synth_t gab_openHat = {                
+    .ampAttack = 7,
+    .ampDecay = 4,
+    .noise=1.0,
+    .overdrive = 5.1
+};
+
+constexpr synth_t gab_clapDrum = {
+    .startFreq=0,
+    .freqDecay = 100,
+    .ampAttack = 0.1,
+    .ampDecay = 4,
+    .noise = 1,
+    .overdrive = 1.4,
+    .lowpassStart = 900,
+};
+
+constexpr synth_t gab_dirtyBass = {
+    .startFreq=200,
+    .ampAttack=10,
+    .ampDecay=30,
+    .modRatio = 0.25,
+    .modStart = 10.0,
+    .modDecay = 120,
+    .overdrive = 6.0
+};
+
+constexpr synth_t gab_cowbell = {
+    .startFreq=900,
+    .ampAttack=2,
+    .ampDecay=8,
+    .modRatio=0.321,
+    .modStart = 21.0,        
+    .modDecay = 3,
+    .overdrive = 0.25,
+};
+
+constexpr synth_t gab_closedCowbell = {
+    .startFreq=900,
+    .ampAttack=2,
+    .ampDecay=8,
+    .modRatio=0.321,
+    .modStart = 0.1,        
+    .modDecay = 2,
+    .overdrive = 0.2,
+};
+
+constexpr synth_t gab_crash = {
+    .startFreq=5000,
+    .ampAttack=2,
+    .ampDecay=19,
+    .noise=0.1,
+    .modRatio=6.321,
+    .modStart = 5000.0,        
+    .modDecay = 5,
+    .overdrive = 2.5,
+    .lowpassStart=1500,
+    .lowpassDecay=90,        
+};
+
+
+constexpr synth_t gabDrums[] = {gab_fmBass, gab_kickDrum, gab_hihatDrum, gab_snareDrum, gab_clickDrum, gab_tomDrum,gab_sweepDrum, gab_teekDrum, gab_openHat, gab_clapDrum, gab_dirtyBass, gab_cowbell,gab_closedCowbell, gab_crash, empty, empty, empty};
+
+constexpr kit_t gabKit = {
+  .synths = gabDrums,
+  .nSynths = 17,
+  .name = "Gabber"
+};
+
 
 // HipHop kit
 
 
 // Definition
 
-kit_t drumKits[] = {standardKit, houseKit};
+kit_t drumKits[] = {standardKit, houseKit, minKit, gabKit};
 int nDrumKits = sizeof(drumKits) / sizeof(kit_t);

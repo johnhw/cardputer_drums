@@ -6,10 +6,12 @@ This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stac
 
 * 16KHz sample rate
 * 16 steps, 8 tracks
-* 10 patterns
+* 20 patterns
 * Swing/shuffle
 * Channel mute/solos
 * Per-step velocity and sub-tick timing adjustment
+* Pattern sequencer
+* Multiple drum kits
 
 ## UI
 The dot grid indicates the 16x8 steps for the current pattern. 
@@ -17,13 +19,14 @@ The dot grid indicates the 16x8 steps for the current pattern.
 ### Status line
 
 #### Top
-* [01] Pattern number
+* [0] Pattern number
+* If there's a pattern sequence, the patterns appear next to the pattern number (e.g. `12241223`)
 
 ### Bottom
 * **BPM** current BPM (60-320)
 * **SWI** current swing (0-99; about 20-30 is useful)
 * **VOL** volume (0-16)
-* **KIT** kit selected (currently only one kit)
+* **KIT** kit selected 
 * **12345678** channel enabled status. Mute'd channels are grayed. Solo'd channels are red. 
 
 ## Controls
@@ -33,7 +36,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `del` deletes the current step
 * `[` "kick left" shift step timing back by 1/12 step
 * `]` "kick right" shift step timing forward by 1/12 step
-* `fn+<n>` where `n` is 0-9 selects pattern `n`
+
 
 * `fn+↑` increase BPM
 * `fn+↓` decrease BPM
@@ -45,11 +48,24 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `fn+]` increase volume
 
 
-* `fn+esc` enter instant preview mode -- press a key to hear the sample preview. `fn+esc` switches back to pattern mode.
+* `Button A` enter instant preview mode -- press a key to hear the sample preview. `Button A` switches back to pattern mode.
+
+### Sequencer
+
+* `opt+<n>` where `n` is 0-9 selects pattern `n`
+* `opt+ESC` toggle pattern sequence mode
+* `opt+←` pattern cursor left
+* `opt+→` pattern cursor right
+* `opt+ENTER` insert current pattern at cursor
+* `opt+DEL` delete pattern at cursor
 
 ### channel
-* `opt+<n>` mute channel `n`
-* `opt+alt+<n>` solo channel `n`
+* `fn+<n>` mute channel `n`
+* `fn+alt+<n>` solo channel `n`
+
+### Kits
+* `alt+<n>` select drum kit `n` (note: this will cause a delay as the kit is synthesised)
+
 
 ### clipboard
 * `fn+d` delete current pattern
@@ -71,4 +87,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `o` beep
 * `p` open hat
 * `q` clap
-* `r` low kick
+* `r` low bass
+* `s` cowbell
+* `t` damped bell
+* `u` crash

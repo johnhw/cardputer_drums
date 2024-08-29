@@ -19,5 +19,10 @@ void adjSwing(DrumMachine& dm, int adj);
 void adjBpm(DrumMachine& dm, int adj);
 void adjCursorKick(DrumMachine& dm, int adj);
 void moveCursor(DrumMachine& dm, int x, int y);
+void drawKitLoading(DrumMachine& dm, int kit);
+void drawTopLine(DrumMachine &dm);
+
+  
+
 
 #endif

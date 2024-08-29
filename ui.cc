@@ -66,8 +66,9 @@ void resetState(DrumMachine& dm)
     recalcChannels(dm);
 
     // Create the drum samples
-    dm.kit = 1;
-    createSamples(dm, drumKits[dm.kit]);
+
+    dm.nKits = nDrumKits; // initialize the number of kits (defined in kits.h)
+    setKit(dm, 0); // set the default kit
 
     // Clear all patterns
     for (int i = 0; i < maxPatterns; i++)
@@ -89,6 +90,15 @@ void resetState(DrumMachine& dm)
 }
 
 
+void setKit(DrumMachine& dm, int kit)
+{
+    if (kit < 0 || kit >= dm.nKits)
+        return;
+    dm.kit = kit;
+    createSamples(dm, drumKits[dm.kit]);
+    requestMix(dm);
+}
+
 
 
 void updateMix(DrumMachine& dm, int16_t step, int16_t chan)
@@ -103,6 +113,49 @@ void requestMix(DrumMachine& dm)
     dm.syncMix = 1; // flag to update on next loop
 }
 
+
+// in patternMode=0 do nothing;
+// in patternMode=1 advance to next pattern in sequence
+// wrapping around to the start if necessary
+void nextPattern(DrumMachine &dm)
+{
+    int pattern;
+
+    if(dm.patternModeSwitch)
+    {
+      dm.patternModeSwitch = 0; // reset flag      
+      if (dm.patternMode == 0)
+      {
+
+        dm.patternMode = 1;
+        dm.patternSeqIndex = 0;
+      }
+      else
+      {
+        dm.patternMode = 0;
+      }
+    }
+
+
+    if (dm.patternMode == 1 && strlen(dm.patternSequence) > 0)
+    {
+        
+        pattern = dm.patternSequence[dm.patternSeqIndex] ;
+
+        
+        setPattern(dm, pattern);        
+        updatePattern(dm);
+        dm.patternSeqIndex++;
+        if (dm.patternSeqIndex >= strlen(dm.patternSequence))
+        {
+            dm.patternSeqIndex = 0;
+        }
+    }
+    else
+    {
+        // do nothing
+    }
+}
 
 
 void setPlayMode(DrumMachine &dm, int mode)

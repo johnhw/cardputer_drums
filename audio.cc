@@ -4,7 +4,7 @@
 #include "config.h"
 #include "synth.h"
 #include "pattern.h"
-
+#include "ui.h"
 
 
 // threshold is 0.0 to 1.0. all other values in samples
@@ -25,7 +25,7 @@ int32_t findSampleEnd(int16_t *sample, int32_t len, int32_t win, double threshol
             return i + win;
         }
     }
-    return 0;
+    return win;
 }
 
 
@@ -204,6 +204,7 @@ void feedPatternBuffers(DrumMachine &dm)
       }
   
       dm.syncMillis = millis();
+      nextPattern(dm); // advance the pattern (only does anything in pattern sequence mode)
     }
     if (dm.waveBufferIndex > 3)
     {
