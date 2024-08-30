@@ -21,6 +21,7 @@ void adjCursorKick(DrumMachine& dm, int adj);
 void moveCursor(DrumMachine& dm, int x, int y);
 void drawKitLoading(DrumMachine& dm, int kit);
 void drawTopLine(DrumMachine &dm);
+void lowerMessage(DrumMachine &dm, const char *message);
 
   
 

@@ -14,24 +14,29 @@
 
 // TODO:
 
-// switch about fn+opt keys
+
+// file UI: filtered file list
+// e.g. channel sidebar for filters (and maybe volume?). Add overdrive
 // kit editor
+// chords in kits
 // Loop samples
 // Sample tuning
-// Channel filters? (e.g. channel sidebar?)
+
 
 // maybe:
-// sd card reading?
-// persistent patterns (in Flash with SPIFFS?)
+
+// headphone USB-C audio
 
 
 #include <M5Cardputer.h>
+#include "src/kits.h"
 #include "src/datatypes.h"
 #include "src/config.h"
 #include "src/audio.h"
 #include "src/ui.h"
 #include "src/patternui.h"
 #include "src/previewui.h"
+#include "src/flash.h"
 
 // Function Declarations
 void initCardputer();
@@ -49,6 +54,8 @@ void initCardputer()
   M5Cardputer.Display.setRotation(1);
   M5Cardputer.Speaker.setVolume(255);
   M5Cardputer.Speaker.begin();
+  createDirIfNotExists(basePath); // make sure we can write to the chosen dir
+  
 }
 
 void splash()
@@ -74,16 +81,15 @@ void splash()
 void setup(void)
 {  
   initCardputer();
-  splash();  
+  splash();    
+  
   resetState(machine);
 }
 
 void loop(void)
 {
   M5Cardputer.update();
-  if (machine.playMode == 0)
-    patternModeUpdate(machine);
-  if (machine.playMode == 1)
-    previewModeUpdate(machine);
+  updateUI(machine);
+  
   delay(1);
 }

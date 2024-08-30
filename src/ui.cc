@@ -4,8 +4,11 @@
 #include "channels.h"
 #include "patternui.h"
 #include "previewui.h"
+#include "confirmui.h"
 #include "kits.h"
 #include "synth.h"
+#include "flash.h"
+#include "serialize.h"
 
 void updatePattern(DrumMachine& dm) {
     setGraphicsModePattern();
@@ -32,6 +35,50 @@ void initCursor(cursor_t &cursor)
 }
 
 
+// save the current drum machine state to a file
+bool saveDrumMachine(DrumMachine &dm, String &fname) { 
+    String json;
+    serializeDrumMachine(dm, json);
+    return saveFile(basePath + "/" + fname, json); 
+}
+
+// load a drum machine state from a file
+bool loadDrumMachine(DrumMachine &dm, String &fname) {
+    String json;
+    bool success;
+    if (!loadFile(basePath + "/" + fname, json)) {
+        return false;
+    }
+    
+    // we do this twice: first time to check we *can*
+    // deserialize; then we reset the state and do it again
+    // otherwise a failed load will leave the machine in a bad state
+    success = deserializeDrumMachine(dm, json);
+    if(!success) {
+        return false;
+    }
+    resetState(dm); // reset the machine
+    success = deserializeDrumMachine(dm, json);
+    if(!success) {
+        return false; // this should never happen!
+    }
+    _setPattern(dm, dm.pattern); // set the pattern pointer
+    updatePattern(dm); // update the pattern / redraw
+    setKit(dm, dm.kit); // set the kit (if it's changed)
+    return true;
+}
+
+void initState(DrumMachine &dm)
+{
+    // Allocate mix buffers
+    allocateMix(dm);
+    dm.kit = -1; // set to -1 so we always set the kit
+      // Create the drum samples
+    dm.nKits = nDrumKits; // initialize the number of kits (defined in kits.h)
+    setKit(dm, 0); // set the default kit (note resetState doesn't do this because it's very slow)
+}
+
+// reset the state 
 void resetState(DrumMachine& dm)
 {
     dm.cursor.width = 12;
@@ -55,20 +102,15 @@ void resetState(DrumMachine& dm)
         dm.channels[chan].volume = 100;
         dm.channels[chan].mute = 0;
         dm.channels[chan].solo = 0;
+        dm.channels[chan].filterCutoff = 0;
         dm.channels[chan]._enabled = 1;
     }
 
-    // Allocate mix buffers
-    allocateMix(dm);
-
+    
     // Recalculate BPM settings and channel configurations
     recalcBPM(dm);
     recalcChannels(dm);
 
-    // Create the drum samples
-
-    dm.nKits = nDrumKits; // initialize the number of kits (defined in kits.h)
-    setKit(dm, 0); // set the default kit
 
     // Clear all patterns
     for (int i = 0; i < maxPatterns; i++)
@@ -76,6 +118,7 @@ void resetState(DrumMachine& dm)
         _setPattern(dm, i);
         clearPattern(dm);
     }
+    initState(dm);
 
     // Set the initial pattern
     setPattern(dm, 1);
@@ -85,15 +128,17 @@ void resetState(DrumMachine& dm)
     // Draw the initial cursor position
     drawCursor(dm, 1);
 
+ 
     // Update the pattern
     updatePattern(dm);
 }
 
-
+// Set the current kit to the given index
+// resynthetizes all samples
 void setKit(DrumMachine& dm, int kit)
 {
     if (kit < 0 || kit >= dm.nKits)
-        return;
+         return;
     dm.kit = kit;
     createSamples(dm, drumKits[dm.kit]);
     requestMix(dm);
@@ -157,16 +202,32 @@ void nextPattern(DrumMachine &dm)
     }
 }
 
+void updateUI(DrumMachine& dm)
+{
+    if (dm.playMode == PLAY_MODE_PATTERN)
+        patternModeUpdate(dm);
+    if (dm.playMode == PLAY_MODE_PREVIEW)
+        previewModeUpdate(dm);
+    if (dm.playMode == PLAY_MODE_CONFIRM)
+        confirmModeUpdate(dm);
+
+}
 
 void setPlayMode(DrumMachine &dm, int mode)
 {
-  dm.playMode = mode;
-  if (mode == 0)
+    dm.lastMode = dm.playMode;
+    dm.playMode = mode;  
+  if (mode == PLAY_MODE_PATTERN)
   {
     updatePattern(dm);
   }
-  if (mode == 1)
+  if (mode == PLAY_MODE_PREVIEW)
   {
     setGraphicsModePreview();
   }
+  if (mode == PLAY_MODE_CONFIRM)
+  {
+    setGraphicsModeConfirm();
+  }
+  
 }

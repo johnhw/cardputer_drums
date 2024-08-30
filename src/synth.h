@@ -2,9 +2,9 @@
 #define SYNTH_H
 #include <stdint.h>
 #include "datatypes.h"
+#include "utils.h"
 
-float iirAlpha(int sr, float freq);
-float halfLifeTime(int sr, float t);
+
 
 typedef struct synth_t
 {
@@ -23,6 +23,11 @@ typedef struct synth_t
   float lowpassStart;
   float lowpassEnd;
   float lowpassDecay;
+  float retriggers;
+  float retriggersDelay;
+  float retriggerRandomDelay;
+  float retriggerDecay;
+
 } synth_t;
 
 struct kit_t
@@ -36,6 +41,7 @@ struct kit_t
 
 // times in milliseconds, frequencies in hZ
 
+void subCreateSynth(sample_t *sample, int32_t samplerate, synth_t *synth, int sampleOffset, float ampScale);
 void createSynth(sample_t *sample, int32_t samplerate, synth_t *synth);
 inline float randFloat();
 

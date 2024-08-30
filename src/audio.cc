@@ -125,6 +125,11 @@ void mix(DrumMachine& dm)
         mixData[chan].nextIndex = -1;
         mixData[chan].kickDelay = 0;
         mixData[chan].currentVelocity = 0;
+        mixData[chan].currentFilter = 0.0f;
+        if(dm.channels[chan].filterCutoff == 0)        
+            mixData[chan].filterAlpha = 0.0f;
+        else
+            mixData[chan].filterAlpha = iirAlpha(samplerate, (16-dm.channels[chan].filterCutoff) * samplerate / 128);        
     }
     k = 0;
     // for each buffer
@@ -167,7 +172,10 @@ void mix(DrumMachine& dm)
                 // copy in the sample, if there's more to copy
                 if (mixData[chan].currentSample)
                 {
-                    out += mixData[chan].currentVelocity * mixData[chan].currentSample->samples[mixData[chan].sampleIndex++];
+                    float in = mixData[chan].currentSample->samples[mixData[chan].sampleIndex++];
+                    mixData[chan].currentFilter = mixData[chan].filterAlpha * mixData[chan].currentFilter + (1.0f - mixData[chan].filterAlpha) * in;
+                    out += mixData[chan].currentVelocity * mixData[chan].currentFilter;
+                    //out += mixData[chan].currentVelocity * mixData[chan].currentSample->samples[mixData[chan].sampleIndex++];
                     // overran the sample, so stop
                     if (mixData[chan].sampleIndex >= mixData[chan].currentSample->len)
                     {
@@ -181,6 +189,7 @@ void mix(DrumMachine& dm)
                 out = 32767;
             if (out < -32767)
                 out = -32767;
+            
             buffer[j] = out;
             k++;
         }

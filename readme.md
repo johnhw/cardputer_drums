@@ -53,6 +53,13 @@ The dot grid indicates the 16x8 steps for the current pattern.
 
 * `Button A` enter instant preview mode -- press a key to hear the sample preview. `Button A` switches back to pattern mode.
 
+### Files
+
+* `fn+s` Save the current pattern (to the scratch buffer if you haven't saved as yet)
+* `fn+a` Save the file, giving a filename. ENTER to load
+* `fn+o` Open a file; type to filter, up/down to select, ENTER to load
+* `fn+n` New file, reset everything (requires a y/n confirmation)
+
 ### Sequencer
 
 * `opt+<n>` where `n` is 0-9 selects pattern `n`
@@ -65,6 +72,9 @@ The dot grid indicates the 16x8 steps for the current pattern.
 ### channel
 * `fn+<n>` mute channel `n`
 * `fn+shift+<n>` solo channel `n`
+* `fn+-` decrease filter cutoff on playing channels (16 steps of filter)
+* `fn+=` increase filter cutoff on playing channels
+
 
 ### Kits
 * `alt+<n>` select drum kit `n` (note: this will cause a delay as the kit is synthesised)

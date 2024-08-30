@@ -108,7 +108,7 @@ void updateCursor(DrumMachine &dm)
 void altKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
   int16_t digit = getDigitPressed(status) - 1;
-  if (digit >= 0 && digit < dm.nKits)
+  if (digit >= 0 && digit < dm.nKits && digit != dm.kit)
   {
     M5Cardputer.Speaker.setVolume(0); // disable audio while changing kit
     // potentially show a "loading kit" status line here...
@@ -254,6 +254,25 @@ void channelKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   }
 }
 
+void adjChanFilter(DrumMachine &dm, int adj)
+{
+  int i;
+  for (i = 0; i < nChans; i++)
+  {
+    // adjust filter cutoff in channel
+    if(dm.channels[i]._enabled)
+    {
+      dm.channels[i].filterCutoff += adj;
+      if (dm.channels[i].filterCutoff < 0)
+        dm.channels[i].filterCutoff = 0;
+      if (dm.channels[i].filterCutoff > 16)
+        dm.channels[i].filterCutoff = 16;
+    }
+  }
+  requestMix(dm);
+ 
+}
+
 void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
   // bpm and swing
@@ -270,6 +289,10 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
     adjVolume(dm, -1);
   if (M5Cardputer.Keyboard.isKeyPressed(']'))
     adjVolume(dm, 1);
+  if (M5Cardputer.Keyboard.isKeyPressed('=')) 
+    adjChanFilter(dm, -1);
+  if (M5Cardputer.Keyboard.isKeyPressed('-'))
+    adjChanFilter(dm, 1);
 
   if (M5Cardputer.Keyboard.isKeyPressed('c'))
     copyPattern(dm);
@@ -420,24 +443,23 @@ void renderBeatLine(DrumMachine &dm)
   }
 }
 
+void lowerMessage(DrumMachine &dm, const char *message)
+{
+   int statusHeight = 16;
+  M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_GREEN);
+
+  // Create the status line with BPM, Swing, Pattern, and Kit information  
+  M5Cardputer.Display.drawString(message, 10, M5Cardputer.Display.height() - statusHeight);
+  M5Cardputer.Display.setTextColor(WHITE);
+  M5Cardputer.Display.setFont(&fonts::Font2);
+}
+
 void drawKitLoading(DrumMachine &dm, int kit)
 {
   int statusHeight = 16;
   char statusLine[256];
-
-  // Set font for the display
-  M5Cardputer.Display.setFont(&fonts::Font0);
-  // Set text color to green for the status line
-  M5Cardputer.Display.setTextColor(BLACK);
-
-  // Clear the status bar area
-  M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_GREEN);
-
-  // Create the status line with BPM, Swing, Pattern, and Kit information
   snprintf(statusLine, 255, "LOADING KIT %02d...", kit);
-  M5Cardputer.Display.drawString(statusLine, 10, M5Cardputer.Display.height() - statusHeight);
-  M5Cardputer.Display.setTextColor(WHITE);
-  M5Cardputer.Display.setFont(&fonts::Font2);
+  lowerMessage(dm, statusLine);
 }
 
 void drawStatus(DrumMachine &dm)

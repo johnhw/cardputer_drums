@@ -81,9 +81,14 @@ constexpr synth_t clapDrum = {
     .startFreq=0,
     .freqDecay = 100,
     .ampAttack = 0.1,
-    .ampDecay = 19,
+    .ampDecay = 9,
     .noise = 1,
-    .overdrive = 2.4
+    .overdrive = 0.9,
+    .retriggers = 4,
+    // multi-trigger
+    .retriggersDelay = 27,
+    .retriggerRandomDelay = 8,
+    .retriggerDecay = 0.7
 };
 
 constexpr synth_t dirtyBass = {

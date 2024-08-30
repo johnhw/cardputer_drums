@@ -9,5 +9,7 @@
 void* allocBuffer(void* buffer, int16_t len, int32_t size);
 
 int16_t getDigitPressed(Keyboard_Class::KeysState status);
+float iirAlpha(int sr, float freq);
+float halfLifeTime(int sr, float t);
 
 #endif

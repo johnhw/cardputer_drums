@@ -37,3 +37,15 @@ int16_t getDigitPressed(Keyboard_Class::KeysState status)
   return -1;
 
 }
+
+float iirAlpha(int sr, float freq)
+{  
+  float wc = 2 * M_PI * freq / sr;
+  return exp(-wc);
+}
+
+float halfLifeTime(int sr, float t)
+{
+  return exp(-log(2.0) / ((float)t * (float)sr + 0.0f));
+}
+

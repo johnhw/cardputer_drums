@@ -2,15 +2,6 @@
 #include <math.h>
 #include "synth.h"
 
-float iirAlpha(int sr, float freq)
-{
-  return 1.0 / (1.0 + (sr / (2 * M_PI * freq)));
-}
-
-float halfLifeTime(int sr, float t)
-{
-  return exp(-log(2.0) / ((float)t * (float)sr + 0.0f));
-}
 
 
 inline float randFloat()
@@ -18,7 +9,33 @@ inline float randFloat()
   return random(-32767, 32767) / 32767.0;
 }
 
+
 void createSynth(sample_t *sample, int32_t samplerate, synth_t *synth)
+{
+
+  int32_t i;
+  int32_t sampleOffset=0, sampleStep;
+  int32_t maxRandomDelaySamples = synth->retriggerRandomDelay * samplerate / 1000;
+  float ampScale = 1.0;   
+    // if we have multiple retriggers, we need to calculate the sample offset and amplitude scale for each
+  sampleStep = synth->retriggersDelay * samplerate / 1000;
+  if(synth->retriggers<2)
+    subCreateSynth(sample, samplerate, synth, 0, 1.0);
+  else
+  {    
+    // otherwise, overlay multiple retriggered version
+    for(i=0; i<synth->retriggers; i++)
+    {
+      subCreateSynth(sample, samplerate, synth, sampleOffset, ampScale);
+      sampleOffset += sampleStep;
+      sampleOffset += random(-maxRandomDelaySamples, maxRandomDelaySamples);
+      if(sampleOffset<0) sampleOffset = 0;
+      ampScale *= synth->retriggerDecay;
+    }
+  }
+}
+
+void subCreateSynth(sample_t *sample, int32_t samplerate, synth_t *synth, int32_t sampleOffset, float ampScale)
 {
   int32_t j;
   
@@ -65,7 +82,7 @@ void createSynth(sample_t *sample, int32_t samplerate, synth_t *synth)
 
   float lowpassAlpha = 0.0;
   float lowpass;
-  for (j = delaySamples; j < sample->len; j++)
+  for (j = delaySamples + sampleOffset; j < sample->len; j++)  
   {
     lowpass = lowpassEnd + lowpassOffset;
     if(lowpass>0)
@@ -87,6 +104,7 @@ void createSynth(sample_t *sample, int32_t samplerate, synth_t *synth)
       out = 1.0;
     if (out < -1.0)
       out = -1.0;
+    out = out * ampScale; // used for retriggers
     out += sample->samples[j] / 32767.0; // accumulate on top of existing sample
     out = tanh(out);
     filterState = lowpassAlpha * filterState + (1-lowpassAlpha) * out;

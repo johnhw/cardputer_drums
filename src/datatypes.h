@@ -6,7 +6,8 @@
 // one channel
 typedef struct channel_t
 {
-  int16_t volume;
+  float volume; // 0.0 to 1.0 (but greater can be used for overdrive)
+  int filterCutoff; // 0-16 16=no filter, 0=full filter, 1/16th of samplerate
   int8_t mute;
   int8_t solo;
   int8_t _enabled; // NB: not directly modified; updated to reflect mute/solo status of all channels
@@ -50,6 +51,8 @@ typedef struct mixData_t
   int16_t nextIndex;
   int32_t kickDelay;
   int16_t currentVelocity;
+  float currentFilter;  
+  float filterAlpha;
 } mixData_t;
 
 struct DrumMachine {
@@ -75,7 +78,7 @@ struct DrumMachine {
     int8_t patternMode = 0; // 0 = one pattern, 1 = sequence
     int8_t patternModeSwitch = 0; // set to indicate that the pattern should switch at the next mix!
     int16_t nKits; // number of kits available (set at start)
-    
+    int16_t lastMode; // last mode we were in (so we can return to it)
     cursor_t cursor;
     channel_t channels[nChans];
     chanData_t* currentPattern;
