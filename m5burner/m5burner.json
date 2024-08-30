@@ -1,0 +1,16 @@
+{
+    "name": "BonnetHead Drum Machine",
+    "description": "Simple 16 step drum machine",
+    "keywords": "audio, drum machine, sound, music",
+    "author": "John H. Williamson",
+    "repository": "https://github.com/johnhw/cardputer_drums",
+    "firmware_category": {
+        "path": "firmware",
+        "device": [
+            "M5Cardputer"
+        ],
+        "default_baud": 921600
+    },
+    "version": "1.0.0",
+    "framework": "Arduino"
+}

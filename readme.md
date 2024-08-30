@@ -1,9 +1,11 @@
-# Cardputer drums
+# Bonnethead: Cardputer drums
 ![cardputer_drums.png](cardputer_drums.png)
 
 [**DEMO VIDEO**](https://www.youtube.com/watch?v=r_0vd7Hbe3E)
 
 This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stack.com/products/m5stack-cardputer-kit-w-m5stamps3?srsltid=AfmBOoqHMPXzj-fobFJN0uUYR1yChvbehNYaBXx4sJz9z3Eqjelnhx3n). 
+
+**Now available on M5Burner as "Bonnethead"** (share code: `9XM7KJjXu1gllDH4`)
 
 ## Features
 
@@ -14,6 +16,7 @@ This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stac
 * Channel mute/solos
 * Per-step velocity and sub-tick timing adjustment
 * Pattern sequencer
+* Per-channel filters
 * Multiple drum kits
 
 ## UI
@@ -27,9 +30,9 @@ The dot grid indicates the 16x8 steps for the current pattern.
 
 ### Bottom
 * **BPM** current BPM (60-320)
-* **SWI** current swing (0-99; about 20-30 is useful)
+* **SW** current swing (0-99; about 20-30 is useful)
 * **VOL** volume (0-16)
-* **KIT** kit selected 
+* **KT** kit selected 
 * **12345678** channel enabled status. Mute'd channels are grayed. Solo'd channels are red. 
 
 ## Controls
