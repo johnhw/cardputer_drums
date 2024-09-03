@@ -10,9 +10,12 @@
 #include "flash.h"
 #include "serialize.h"
 #include "helpui.h"
-#include <SPIFFS.h>
+
+#include <LittleFS.h>
 
 void updatePattern(DrumMachine& dm) {
+    recalcBPM(dm);
+    recalcChannels(dm);
     setGraphicsModePattern();
     redrawPattern(dm);
     drawStatus(dm);
@@ -40,7 +43,7 @@ void initCursor(cursor_t &cursor)
 // save the current drum machine state to a file
 bool saveDrumMachine(DrumMachine &dm, String &fname) { 
         
-    File ser = SPIFFS.open(basePathPattern + "/" + fname, "w");
+    File ser = LittleFS.open(basePathPattern + "/" + fname, "w");
     if (!ser) {
         Serial.println("Failed to open file for writing");
         return false;
@@ -50,21 +53,26 @@ bool saveDrumMachine(DrumMachine &dm, String &fname) {
     return true;
 }
 
+
+void reinitState(DrumMachine &dm)
+{
+    dm.patternCursor = 0;
+    dm.patternSeqIndex = 0;
+    dm.patternMode = 0;
+    _setPattern(dm, dm.pattern); // set the pattern pointer
+    updatePattern(dm); // update the pattern / redraw
+}
+
 // load a drum machine state from a file
 bool loadDrumMachine(DrumMachine &dm, String &fname) {
         
     bool success;
-    File ser = SPIFFS.open(basePathPattern + "/" + fname, "r");
+    File ser = LittleFS.open(basePathPattern + "/" + fname, "r");
     if (!ser) {
         Serial.println("Failed to open file for reading");
         return false;
     }
-    
-    // we do this twice: first time to check we *can*
-    // deserialize; then we reset the state and do it again
-    // otherwise a failed load will leave the machine in a bad state
-
-    //resetState(dm); // reset the machine
+    int oldKit = dm.kit;
     success = readDrumMachine(dm, ser);
     ser.close();
     if(!success) {
@@ -72,10 +80,13 @@ bool loadDrumMachine(DrumMachine &dm, String &fname) {
         return false;
     }
     
-    _setPattern(dm, dm.pattern); // set the pattern pointer
-    updatePattern(dm); // update the pattern / redraw
-    setKit(dm, dm.kit); // set the kit (if it's changed)
-    Serial.println("Loaded drum machine from file");
+    reinitState(dm);
+    if(oldKit != dm.kit)
+    {
+        oldKit = dm.kit;
+        dm.kit = -1;
+        setKit(dm, oldKit); 
+    }
     return true;
 }
 

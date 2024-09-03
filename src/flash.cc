@@ -1,20 +1,22 @@
 #include "flash.h"
-#include <SPIFFS.h>
+
 #include <M5Cardputer.h>
-#include <FS.h>
 #include <vector>
+
+
+
 #define FORMAT_SPIFFS_IF_FAILED true
 
-char spiffsErrorBuf[256];
-void spiffsError(char *msg)
+char LittleFSErrorBuf[256];
+void LittleFSError(char *msg)
 {
-    snprintf(spiffsErrorBuf, sizeof(spiffsErrorBuf)-1, msg);
-    Serial.println(spiffsErrorBuf);
+    snprintf(LittleFSErrorBuf, sizeof(LittleFSErrorBuf)-1, msg);
+    Serial.println(LittleFSErrorBuf);
 }
 
-bool initSPIFFS() {
-    if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
-        spiffsError("Failed to mount SPIFFS");
+bool initLittleFS() {
+    if (!LittleFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
+        LittleFSError("Failed to mount SPIFFS");
         return false;
     }
     return true;
@@ -23,10 +25,10 @@ bool initSPIFFS() {
 
 
 bool loadFile(const String &path, String &content) {
-    Serial.printf("Loading file: %s\n", path.c_str());
-    File file = SPIFFS.open(path, FILE_READ);
+    
+    File file = LittleFS.open(path, FILE_READ);
     if (!file) {
-        spiffsError("Failed to open file for reading");
+        LittleFSError("Failed to open file for reading");
         return false;
     }
 
@@ -38,16 +40,16 @@ bool loadFile(const String &path, String &content) {
 
 // Save a buffer to a file in SPIFFS
 bool saveFile(const String &path, const String &content) {
-    Serial.printf("Saving file: %s\n", path.c_str());
-    File file = SPIFFS.open(path, "w");
+    
+    File file = LittleFS.open(path, "w");
     if (!file) {
-        spiffsError("Failed to open file for writing");
+        LittleFSError("Failed to open file for writing");
         return false;
     }
 
     size_t written = file.print(content);
     if (written != content.length()) {
-        spiffsError("Failed to write full data to file");
+        LittleFSError("Failed to write full data to file");
         file.close();
         return false;
     }
@@ -57,24 +59,24 @@ bool saveFile(const String &path, const String &content) {
 
     // now open it and verify the contents
     String verify;
-    file = SPIFFS.open(path, FILE_READ);
+    file = LittleFS.open(path, FILE_READ);
     if (!file) {
-        spiffsError("Failed to open file for verification");
+        LittleFSError("Failed to open file for verification");
         return false;
     }
     verify = file.readString();
     file.close();
     // check length
     if (verify.length() != content.length()) {
-        spiffsError("Failed to verify file length");
+        LittleFSError("Failed to verify file length");
         Serial.printf("Expected: %d, got: %d\n", content.length(), verify.length());
         return false;
     }
     if (verify != content) {
-        spiffsError("Failed to verify file contents");
+        LittleFSError("Failed to verify file contents");
         return false;
     }
-    Serial.println("Verified file contents");
+    
     return true;
 }
 
@@ -83,9 +85,9 @@ std::vector<String> listFiles(const String &path) {
     std::vector<String> fileList;
     fileList.clear();
     
-    File root = SPIFFS.open(path);
+    File root = LittleFS.open(path);
     if (!root) {
-        spiffsError("Failed to open directory");
+        LittleFSError("Failed to open directory");
         return fileList;
     }
 
@@ -97,21 +99,20 @@ std::vector<String> listFiles(const String &path) {
 }
 
 // Create a directory if it does not exist
-bool createDirIfNotExists(const String path) {
-    Serial.println("Creating directory: " + path);
+bool createDirIfNotExists(const String path) {    
     
     // Check if the directory exists
-    if (SPIFFS.exists(path)) {        
-        Serial.println("Path exists");
+    if (LittleFS.exists(path)) {        
+        
         return true;
     }
 
     // Try to create the directory
-    if (SPIFFS.mkdir(path)) {        
-        Serial.println("Made path");
+    if (LittleFS.mkdir(path)) {        
+        
         return true;
     } else {
-        spiffsError("Failed to create directory");
+        LittleFSError("Failed to create directory");
         return false;
     }
 }

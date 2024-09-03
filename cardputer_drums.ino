@@ -54,8 +54,8 @@ void initCardputer()
   M5Cardputer.Display.setRotation(1);
   M5Cardputer.Speaker.setVolume(255);
   M5Cardputer.Speaker.begin();
-  initSPIFFS();
-  createDirIfNotExists("/bonnethead");
+  initLittleFS();
+  createDirIfNotExists(basePathRoot);
   createDirIfNotExists(basePathPattern); // make sure we can write to the chosen dir
   createDirIfNotExists(basePathKits); 
   createDirIfNotExists(basePathSamples); 
@@ -84,10 +84,10 @@ void splash()
   splashSprite.setTextColor(TFT_LIGHTGREY);
   splashSprite.drawString("BonnetHead", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 - 50);
 
-  // show JSON_VERSION string
+  
   splashSprite.setFont(&fonts::Font0);
   splashSprite.setTextColor(TFT_BLACK);
-  splashSprite.drawString(JSON_VERSION, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 - 20 );
+  splashSprite.drawString(VERSION, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 - 20 );
 
   // draw a rectangle for the lower text
   splashSprite.fillRect(0, M5Cardputer.Display.height() / 2 + 45, M5Cardputer.Display.width(), 55, RGB565(5,5,5));
@@ -109,8 +109,8 @@ void setup(void)
   splash();    
   machine.kit = -1; // set to -1 so we always set the kit  
   resetState(machine);
-  //String fname = "startup.jsn";
-  //loadDrumMachine(machine, fname);
+  String fname = "startup";
+  loadDrumMachine(machine, fname);
 }
 
 void loop(void)

@@ -62,7 +62,6 @@ bool writeDrumMachine(DrumMachine &dm, File &ser)
     }
 
     addToken(ser, 0);    
-    Serial.println("Serialized DrumMachine");
     
     return true;
 
@@ -133,7 +132,6 @@ bool readDrumMachine(DrumMachine &dm, File &ser)
         return false;
     }
 
-    Serial.println("Deserialized DrumMachine");
     return true;
 
 }
