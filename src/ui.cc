@@ -9,6 +9,8 @@
 #include "synth.h"
 #include "flash.h"
 #include "serialize.h"
+#include "helpui.h"
+#include <SPIFFS.h>
 
 void updatePattern(DrumMachine& dm) {
     setGraphicsModePattern();
@@ -37,34 +39,43 @@ void initCursor(cursor_t &cursor)
 
 // save the current drum machine state to a file
 bool saveDrumMachine(DrumMachine &dm, String &fname) { 
-    String json;
-    serializeDrumMachine(dm, json);
-    return saveFile(basePath + "/" + fname, json); 
+        
+    File ser = SPIFFS.open(basePathPattern + "/" + fname, "w");
+    if (!ser) {
+        Serial.println("Failed to open file for writing");
+        return false;
+    }
+    writeDrumMachine(dm, ser);
+    ser.close();    
+    return true;
 }
 
 // load a drum machine state from a file
 bool loadDrumMachine(DrumMachine &dm, String &fname) {
-    String json;
+        
     bool success;
-    if (!loadFile(basePath + "/" + fname, json)) {
+    File ser = SPIFFS.open(basePathPattern + "/" + fname, "r");
+    if (!ser) {
+        Serial.println("Failed to open file for reading");
         return false;
     }
     
     // we do this twice: first time to check we *can*
     // deserialize; then we reset the state and do it again
     // otherwise a failed load will leave the machine in a bad state
-    success = deserializeDrumMachine(dm, json);
+
+    //resetState(dm); // reset the machine
+    success = readDrumMachine(dm, ser);
+    ser.close();
     if(!success) {
+        Serial.println("Failed to deserialize");
         return false;
     }
-    resetState(dm); // reset the machine
-    success = deserializeDrumMachine(dm, json);
-    if(!success) {
-        return false; // this should never happen!
-    }
+    
     _setPattern(dm, dm.pattern); // set the pattern pointer
     updatePattern(dm); // update the pattern / redraw
     setKit(dm, dm.kit); // set the kit (if it's changed)
+    Serial.println("Loaded drum machine from file");
     return true;
 }
 
@@ -99,11 +110,12 @@ void resetState(DrumMachine& dm)
     // Reset all channels
     for (int chan = 0; chan < nChans; chan++)
     {
-        dm.channels[chan].volume = 100;
+        dm.channels[chan].volume = 8;
         dm.channels[chan].mute = 0;
         dm.channels[chan].solo = 0;
         dm.channels[chan].filterCutoff = 0;
         dm.channels[chan]._enabled = 1;
+        
     }
 
     
@@ -111,14 +123,14 @@ void resetState(DrumMachine& dm)
     recalcBPM(dm);
     recalcChannels(dm);
 
-
+    initState(dm);
     // Clear all patterns
     for (int i = 0; i < maxPatterns; i++)
     {
         _setPattern(dm, i);
         clearPattern(dm);
     }
-    initState(dm);
+    
 
     // Set the initial pattern
     setPattern(dm, 1);
@@ -131,13 +143,14 @@ void resetState(DrumMachine& dm)
  
     // Update the pattern
     updatePattern(dm);
+    
 }
 
 // Set the current kit to the given index
 // resynthetizes all samples
 void setKit(DrumMachine& dm, int kit)
 {
-    if (kit < 0 || kit >= dm.nKits)
+    if (kit < 0 || kit >= dm.nKits || dm.kit == kit)
          return;
     dm.kit = kit;
     createSamples(dm, drumKits[dm.kit]);
@@ -210,13 +223,19 @@ void updateUI(DrumMachine& dm)
         previewModeUpdate(dm);
     if (dm.playMode == PLAY_MODE_CONFIRM)
         confirmModeUpdate(dm);
+    if (dm.playMode == PLAY_MODE_HELP)
+        helpModeUpdate(dm);
+        
 
 }
 
 void setPlayMode(DrumMachine &dm, int mode)
 {
-    dm.lastMode = dm.playMode;
-    dm.playMode = mode;  
+  if(mode == dm.playMode)
+    return; // already in the mode, don't do anything!
+
+  dm.lastMode = dm.playMode;
+  dm.playMode = mode;  
   if (mode == PLAY_MODE_PATTERN)
   {
     updatePattern(dm);
@@ -228,6 +247,10 @@ void setPlayMode(DrumMachine &dm, int mode)
   if (mode == PLAY_MODE_CONFIRM)
   {
     setGraphicsModeConfirm();
+  }
+  if(mode == PLAY_MODE_HELP)
+  {
+    setGraphicsModeHelp(dm);
   }
   
 }

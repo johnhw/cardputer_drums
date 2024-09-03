@@ -2,10 +2,10 @@
 #define SERIALIZE_H
 #include <ArduinoJson.h>
 #include "datatypes.h"
-#include "config.h"
+#include <SPIFFS.h>
 
-void serializeDrumMachine(DrumMachine &dm, String &json);
-bool deserializeDrumMachine(DrumMachine &dm, String &json);
+bool readDrumMachine(DrumMachine &dm, File &ser);
+bool writeDrumMachine(DrumMachine &dm, File &ser);
 
 
 #endif 

@@ -104,6 +104,10 @@ void createSamples(DrumMachine& dm, kit_t &kit)
    
 }
 
+float fast_tanh(float x)
+{
+    return 32767.0 * tanh(x / 32767.0);
+}
 
 void mix(DrumMachine& dm)
 {
@@ -124,12 +128,13 @@ void mix(DrumMachine& dm)
         mixData[chan].stepIndex = -1;
         mixData[chan].nextIndex = -1;
         mixData[chan].kickDelay = 0;
+        mixData[chan].gain = powf(1.4142, (dm.channels[chan].volume - 8));
         mixData[chan].currentVelocity = 0;
         mixData[chan].currentFilter = 0.0f;
         if(dm.channels[chan].filterCutoff == 0)        
             mixData[chan].filterAlpha = 0.0f;
         else
-            mixData[chan].filterAlpha = iirAlpha(samplerate, (16-dm.channels[chan].filterCutoff) * samplerate / 128);        
+            mixData[chan].filterAlpha = iirAlpha(samplerate, (maxFilterCutoff-dm.channels[chan].filterCutoff) * samplerate / (maxFilterCutoff*8));        
     }
     k = 0;
     // for each buffer
@@ -172,10 +177,12 @@ void mix(DrumMachine& dm)
                 // copy in the sample, if there's more to copy
                 if (mixData[chan].currentSample)
                 {
-                    float in = mixData[chan].currentSample->samples[mixData[chan].sampleIndex++];
+                    //float in = fast_tanh(mixData[chan].currentSample->samples[mixData[chan].sampleIndex++] * mixData[chan].gain);
+                    float in = mixData[chan].currentSample->samples[mixData[chan].sampleIndex++] * mixData[chan].gain;
+                    
                     mixData[chan].currentFilter = mixData[chan].filterAlpha * mixData[chan].currentFilter + (1.0f - mixData[chan].filterAlpha) * in;
                     out += mixData[chan].currentVelocity * mixData[chan].currentFilter;
-                    //out += mixData[chan].currentVelocity * mixData[chan].currentSample->samples[mixData[chan].sampleIndex++];
+                    
                     // overran the sample, so stop
                     if (mixData[chan].sampleIndex >= mixData[chan].currentSample->len)
                     {

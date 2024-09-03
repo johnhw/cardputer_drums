@@ -83,6 +83,39 @@ void adjCursorKick(DrumMachine &dm, int adj)
   requestMix(dm);
 }
 
+// redraw the cursor on all channels in the current step
+void redrawCursorChannel(DrumMachine &dm)
+{
+  int cursor_chan = dm.cursor.chan;
+  for (int i = 0; i < nChans; i++)
+  {
+    dm.cursor.chan = i;
+    dm.cursor.dirty = 1;
+    drawCursor(dm, 0);
+  }
+  dm.cursor.chan = cursor_chan;
+}
+
+// increment/decrement the kickDelay on the current
+// step on all channels
+void adjChanKick(DrumMachine &dm, int adj)
+{
+  int chan;
+  for(chan = 0; chan < nChans; chan++)
+  {
+   
+    int index = dm.cursor.step + nSteps * chan;
+    int kick = dm.currentPattern[index].kickDelay + adj;
+    if (kick < 0)
+      kick = 0;
+    if (kick >= kickSubdiv)
+      kick = kickSubdiv - 1;
+    dm.currentPattern[index].kickDelay = kick;
+  }
+  redrawCursorChannel(dm);
+  requestMix(dm);
+}
+
 void updateCursor(DrumMachine &dm)
 {
   dm.cursor.flash += 1;
@@ -105,6 +138,7 @@ void updateCursor(DrumMachine &dm)
   }
 }
 
+
 void altKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
   int16_t digit = getDigitPressed(status) - 1;
@@ -116,6 +150,32 @@ void altKey(DrumMachine &dm, Keyboard_Class::KeysState status)
     setKit(dm, digit);
     drawStatus(dm);
     adjVolume(dm, 0); // restore the audio
+  }
+}
+
+
+// draw the filter cutoff bars for each channel (at the left of each channel)
+void drawChannelBars(DrumMachine &dm)
+{
+  int16_t x, y;
+  int32_t maxHeight = dm.cursor.height - 1;
+  float height;
+  getCursorPixelPos(dm, 0, 0, x, y);
+  M5Cardputer.Display.fillRect(0, 0, 1, M5Cardputer.Display.height(), BLACK);
+  M5Cardputer.Display.fillRect(M5Cardputer.Display.width()-1, 0, 1, M5Cardputer.Display.height(), BLACK);
+
+  for(int chan=0;chan<nChans;chan++)
+  {
+    height = (maxFilterCutoff-dm.channels[chan].filterCutoff) * maxHeight / maxFilterCutoff;
+    getCursorPixelPos(dm, 0, chan, x, y);
+    M5Cardputer.Display.fillRect(0, maxHeight-height+y+4, 1, (int)height, GREEN);
+  }
+
+  for(int chan=0;chan<nChans;chan++)
+  {
+    height = (dm.channels[chan].volume) * maxHeight / 16;
+    getCursorPixelPos(dm, 0, chan, x, y);
+    M5Cardputer.Display.fillRect(M5Cardputer.Display.width()-1, maxHeight-height+y+4, 1, (int)height, RED);
   }
 }
 
@@ -133,6 +193,7 @@ void patternModeKeys(DrumMachine &dm)
     {
       Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
 
+     
       // kit select
       if (status.alt)
       {
@@ -140,7 +201,7 @@ void patternModeKeys(DrumMachine &dm)
       }
       if (status.opt)
       {
-        channelKey(dm, status);
+        patternKey(dm, status);
       }
       else
       {
@@ -163,6 +224,12 @@ void patternModeKeys(DrumMachine &dm)
             if (isdigit(status.word[0]))
               setCursorVel(dm, status.word[0]);
           }
+
+          // help screen
+          if(M5Cardputer.Keyboard.isKeyPressed('`'))
+          {
+            setPlayMode(dm, PLAY_MODE_HELP);
+          }
           // cursor
           if (M5Cardputer.Keyboard.isKeyPressed(','))
             moveCursor(dm, -1, 0);
@@ -172,10 +239,25 @@ void patternModeKeys(DrumMachine &dm)
             moveCursor(dm, 0, -1);
           if (M5Cardputer.Keyboard.isKeyPressed('.'))
             moveCursor(dm, 0, 1);
+        
           if (M5Cardputer.Keyboard.isKeyPressed(']'))
             adjCursorKick(dm, 1);
           if (M5Cardputer.Keyboard.isKeyPressed('['))
             adjCursorKick(dm, -1);
+          if (M5Cardputer.Keyboard.isKeyPressed('{'))
+            adjChanKick(dm, -1);
+          if (M5Cardputer.Keyboard.isKeyPressed('}'))
+            adjChanKick(dm, 1);
+
+          if (M5Cardputer.Keyboard.isKeyPressed('=')) 
+            adjChanFilter(dm, -1);
+          if (M5Cardputer.Keyboard.isKeyPressed('-'))
+            adjChanFilter(dm, 1);
+          if (M5Cardputer.Keyboard.isKeyPressed('\\')) 
+            adjChanVolume(dm, 1);
+          if (M5Cardputer.Keyboard.isKeyPressed('\''))
+            adjChanVolume(dm, -1);
+
         }
       }
     }
@@ -230,7 +312,7 @@ void patternSwitchMode(DrumMachine &dm)
   drawTopLine(dm);
 }
 
-void channelKey(DrumMachine &dm, Keyboard_Class::KeysState status)
+void patternKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
 
   if (M5Cardputer.Keyboard.isKeyPressed(','))
@@ -265,16 +347,39 @@ void adjChanFilter(DrumMachine &dm, int adj)
       dm.channels[i].filterCutoff += adj;
       if (dm.channels[i].filterCutoff < 0)
         dm.channels[i].filterCutoff = 0;
-      if (dm.channels[i].filterCutoff > 16)
-        dm.channels[i].filterCutoff = 16;
+      if (dm.channels[i].filterCutoff > maxFilterCutoff)
+        dm.channels[i].filterCutoff = maxFilterCutoff;
     }
   }
+  drawChannelBars(dm);
   requestMix(dm);
- 
+
 }
+
+void adjChanVolume(DrumMachine &dm, int adj)
+{
+  int i;
+  for (i = 0; i < nChans; i++)
+  {
+    // adjust filter cutoff in channel
+    if(dm.channels[i]._enabled)
+    {
+      dm.channels[i].volume += adj;
+      if (dm.channels[i].volume < 0)
+        dm.channels[i].volume = 0;
+      if (dm.channels[i].volume > 16)
+        dm.channels[i].volume = 16;
+    }
+  }
+  drawChannelBars(dm);
+  requestMix(dm);
+}
+
 
 void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
+
+
   // bpm and swing
 
   if (M5Cardputer.Keyboard.isKeyPressed(','))
@@ -289,10 +394,20 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
     adjVolume(dm, -1);
   if (M5Cardputer.Keyboard.isKeyPressed(']'))
     adjVolume(dm, 1);
-  if (M5Cardputer.Keyboard.isKeyPressed('=')) 
-    adjChanFilter(dm, -1);
-  if (M5Cardputer.Keyboard.isKeyPressed('-'))
-    adjChanFilter(dm, 1);
+  
+  // file operations (to be completed)
+  String fname = "startup.jsn";
+  if(M5Cardputer.Keyboard.isKeyPressed('n'))
+    resetState(dm);
+  if (M5Cardputer.Keyboard.isKeyPressed('s'))
+    saveDrumMachine(dm, fname);
+
+  // if (M5Cardputer.Keyboard.isKeyPressed('a'))
+  //   saveDrumMachine(dm, "_startup.json");
+  
+  if (M5Cardputer.Keyboard.isKeyPressed('o'))
+    loadDrumMachine(dm, fname);
+  
 
   if (M5Cardputer.Keyboard.isKeyPressed('c'))
     copyPattern(dm);
@@ -313,11 +428,28 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   int16_t digit = getDigitPressed(status) - 1;
   if (digit >= 0 && digit < nChans)
   {
-    if (status.shift)
-      toggleSolo(dm, digit);
-    else
       toggleMute(dm, digit);
   }
+  if(M5Cardputer.Keyboard.isKeyPressed('!'))
+    toggleSolo(dm, 0);
+  if(M5Cardputer.Keyboard.isKeyPressed('@'))
+    toggleSolo(dm, 1);
+  if(M5Cardputer.Keyboard.isKeyPressed('#'))
+    toggleSolo(dm, 2);
+  if(M5Cardputer.Keyboard.isKeyPressed('$'))
+    toggleSolo(dm, 3);
+  if(M5Cardputer.Keyboard.isKeyPressed('%'))  
+    toggleSolo(dm, 4);
+  if(M5Cardputer.Keyboard.isKeyPressed('^'))  
+    toggleSolo(dm, 5);
+  if(M5Cardputer.Keyboard.isKeyPressed('&'))
+    toggleSolo(dm, 6);
+  if(M5Cardputer.Keyboard.isKeyPressed('*'))  
+    toggleSolo(dm, 7);
+  
+
+
+
 }
 
 void renderCursor(DrumMachine &dm, int state)
@@ -338,7 +470,7 @@ void renderCursor(DrumMachine &dm, int state)
   getCursorChar(dm, ch, vel);
   s[0] = ch;
 
-  int16_t charColor = RGB565(0, vel * 3 - ((dm.cursor.step % 2) ? 0 : 2), 0);
+  int16_t charColor = RGB565(0, vel * 3 - ((dm.cursor.step % 2) ? 0 : 3), 0);
   int boxOffX = -4;
   int boxOffY = -2;
   int boxX = drawX + boxOffX;
@@ -541,6 +673,8 @@ void redrawPattern(DrumMachine &dm)
   }
   dm.cursor.step = oldStep;
   dm.cursor.chan = oldChan;
+  dm.cursor.dirty = 1;
+  drawChannelBars(dm);
 }
 
 // normal pattern mode

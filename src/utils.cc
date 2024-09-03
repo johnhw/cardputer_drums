@@ -46,6 +46,7 @@ float iirAlpha(int sr, float freq)
 
 float halfLifeTime(int sr, float t)
 {
+  
   return exp(-log(2.0) / ((float)t * (float)sr + 0.0f));
 }
 

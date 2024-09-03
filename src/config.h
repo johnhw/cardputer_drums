@@ -10,8 +10,12 @@ static constexpr const int16_t kickSubdiv = 12; // subdivisions per unit time
 static constexpr const int16_t minBPM = 60;     // minimum bpm
 static constexpr const int16_t cursorFlashTime = 200;
 static constexpr const int16_t maxPatternSequence = 32;
-const String JSON_VERSION = "1.0.0";
-const String basePath = "bonnethead"; // path in the filesystem to save/load from
+static constexpr const int16_t maxFilterCutoff = 16; // number of steps in the filter cutoff
+static constexpr const int16_t maxChannelVolume = 16; // number of steps in the channel volume setting
+const String JSON_VERSION = "1.0.1";
+const String basePathPattern = ""; //bonnethead/patterns"; // paths in the filesystem to save/load from
+const String basePathKits = ""; //"/bonnethead/kits"; 
+const String basePathSamples = "";// "/bonnethead/samples"; 
 
 // pattern mode
 #define PLAY_MODE_PATTERN 0 
@@ -19,5 +23,6 @@ const String basePath = "bonnethead"; // path in the filesystem to save/load fro
 #define PLAY_MODE_CONFIRM 2
 #define PLAY_MODE_FILE 3
 #define PLAY_MODE_KIT_EDIT 4
+#define PLAY_MODE_HELP 5 
 
 #endif

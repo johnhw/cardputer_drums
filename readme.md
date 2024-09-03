@@ -37,7 +37,8 @@ The dot grid indicates the 16x8 steps for the current pattern.
 
 ## Controls
 
-* Letter keys `a-z` enter sounds. See the drum map for details.
+### Pattern
+* `a-z` enter sounds. See the drum map for details.
 * `0-9` sets the velocity of the current step (0=silent, 9=max. 6=default)
 * `del` deletes the current step
 * `[` "kick left" shift step timing back by 1/12 step
@@ -73,10 +74,12 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `opt+DEL` delete pattern at cursor
 
 ### channel
-* `fn+<n>` mute channel `n`
-* `fn+shift+<n>` solo channel `n`
-* `fn+-` decrease filter cutoff on playing channels (16 steps of filter)
-* `fn+=` increase filter cutoff on playing channels
+* `fn+<n>` toggle mute channel `n`
+* `fn+shift+<n>` toggle solo channel `n` (multiple channels can be solo'd)
+* `fn+-` decrease filter cutoff on active channels (16 steps of filter)
+* `fn+=` increase filter cutoff on active channels
+* `fn+\` decrease channel volume on active channels
+* `fn+'` inccrease channel volume on active channels
 
 
 ### Kits

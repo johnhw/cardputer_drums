@@ -3,39 +3,43 @@
 #include <M5Cardputer.h>
 #include <FS.h>
 #include <vector>
+#define FORMAT_SPIFFS_IF_FAILED true
 
 char spiffsErrorBuf[256];
 void spiffsError(char *msg)
 {
     snprintf(spiffsErrorBuf, sizeof(spiffsErrorBuf)-1, msg);
+    Serial.println(spiffsErrorBuf);
 }
 
-// Load a file from SPIFFS into a buffer
-bool loadFile(const String &path, String &content) {
-    if (!SPIFFS.begin()) {
+bool initSPIFFS() {
+    if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
         spiffsError("Failed to mount SPIFFS");
         return false;
     }
+    return true;
+}
 
+
+
+bool loadFile(const String &path, String &content) {
+    Serial.printf("Loading file: %s\n", path.c_str());
     File file = SPIFFS.open(path, FILE_READ);
     if (!file) {
-        spiffsError("Failed to open file");
+        spiffsError("Failed to open file for reading");
         return false;
     }
 
-    content = file.readString();  // Read the entire file into a String
+    content = file.readString();
     file.close();
+    Serial.printf("Loaded file: %s\n", path.c_str());
     return true;
 }
 
 // Save a buffer to a file in SPIFFS
 bool saveFile(const String &path, const String &content) {
-    if (!SPIFFS.begin()) {
-        spiffsError("Failed to mount SPIFFS");
-        return false;
-    }
-
-    File file = SPIFFS.open(path, FILE_WRITE);
+    Serial.printf("Saving file: %s\n", path.c_str());
+    File file = SPIFFS.open(path, "w");
     if (!file) {
         spiffsError("Failed to open file for writing");
         return false;
@@ -48,7 +52,29 @@ bool saveFile(const String &path, const String &content) {
         return false;
     }
 
+    Serial.println("Saved file: " + path);
     file.close();
+
+    // now open it and verify the contents
+    String verify;
+    file = SPIFFS.open(path, FILE_READ);
+    if (!file) {
+        spiffsError("Failed to open file for verification");
+        return false;
+    }
+    verify = file.readString();
+    file.close();
+    // check length
+    if (verify.length() != content.length()) {
+        spiffsError("Failed to verify file length");
+        Serial.printf("Expected: %d, got: %d\n", content.length(), verify.length());
+        return false;
+    }
+    if (verify != content) {
+        spiffsError("Failed to verify file contents");
+        return false;
+    }
+    Serial.println("Verified file contents");
     return true;
 }
 
@@ -56,11 +82,7 @@ bool saveFile(const String &path, const String &content) {
 std::vector<String> listFiles(const String &path) {
     std::vector<String> fileList;
     fileList.clear();
-    if (!SPIFFS.begin()) {
-        spiffsError("Failed to mount SPIFFS");
-        return fileList;
-    }
-
+    
     File root = SPIFFS.open(path);
     if (!root) {
         spiffsError("Failed to open directory");
@@ -76,18 +98,17 @@ std::vector<String> listFiles(const String &path) {
 
 // Create a directory if it does not exist
 bool createDirIfNotExists(const String path) {
-    if (!SPIFFS.begin()) {
-        spiffsError("Failed to mount SPIFFS");
-        return false;
-    }
-
+    Serial.println("Creating directory: " + path);
+    
     // Check if the directory exists
     if (SPIFFS.exists(path)) {        
+        Serial.println("Path exists");
         return true;
     }
 
     // Try to create the directory
     if (SPIFFS.mkdir(path)) {        
+        Serial.println("Made path");
         return true;
     } else {
         spiffsError("Failed to create directory");

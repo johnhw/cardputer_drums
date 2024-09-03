@@ -16,7 +16,7 @@
 
 
 // file UI: filtered file list
-// e.g. channel sidebar for filters (and maybe volume?). Add overdrive
+// channel colume overdrive (16 +/- 3db, default = 8 = 0db)
 // kit editor
 // chords in kits
 // Loop samples
@@ -48,32 +48,57 @@ static struct DrumMachine machine; // global drum machine state
 // Initialize the Cardputer
 void initCardputer()
 {
-  auto cfg = M5.config();
+  auto cfg = M5.config();  
   M5Cardputer.begin(cfg);
   M5Cardputer.Display.startWrite();
   M5Cardputer.Display.setRotation(1);
   M5Cardputer.Speaker.setVolume(255);
   M5Cardputer.Speaker.begin();
-  createDirIfNotExists(basePath); // make sure we can write to the chosen dir
+  initSPIFFS();
+  createDirIfNotExists("/bonnethead");
+  createDirIfNotExists(basePathPattern); // make sure we can write to the chosen dir
+  createDirIfNotExists(basePathKits); 
+  createDirIfNotExists(basePathSamples); 
   
 }
 
 void splash()
 {
-  M5Cardputer.Display.clearDisplay(TFT_DARKGREY);
-  M5Cardputer.Display.setFont(&fonts::FreeMonoBold18pt7b);
-  M5Cardputer.Display.setTextDatum(top_center);
-  M5Cardputer.Display.setTextColor(TFT_BLACK);
-  M5Cardputer.Display.drawString("BonnetHead", M5Cardputer.Display.width() / 2 + 1, M5Cardputer.Display.height() / 2 - 50 + 1);
 
-  M5Cardputer.Display.setTextColor(TFT_LIGHTGREY);
-  M5Cardputer.Display.drawString("BonnetHead", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 - 50);
 
-  // draw text in small font below
-  M5Cardputer.Display.setFont(&fonts::Font0);
-  M5Cardputer.Display.setTextColor(TFT_GREEN);
-  M5Cardputer.Display.drawString("Williamson Industries", M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 + 50);
   
+
+  //LGFX_Sprite splashSprite = LGFX_Sprite(&M5.Lcd);
+  // LGFX_Sprite splashSprite = LGFX_Sprite(&M5Cardputer.Display);
+  // splashSprite.setColorDepth(16);
+  // splashSprite.createSprite(M5Cardputer.Display.width(), M5Cardputer.Display.height());
+
+  auto splashSprite = M5Cardputer.Display; 
+  splashSprite.clearDisplay(TFT_DARKGREY); 
+
+  splashSprite.setFont(&fonts::FreeMonoBold18pt7b);
+  splashSprite.setTextDatum(top_center);
+  splashSprite.setTextColor(TFT_BLACK);
+  splashSprite.drawString("BonnetHead", M5Cardputer.Display.width() / 2 + 1, M5Cardputer.Display.height() / 2 - 50 + 1);
+
+  splashSprite.setTextColor(TFT_LIGHTGREY);
+  splashSprite.drawString("BonnetHead", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 - 50);
+
+  // show JSON_VERSION string
+  splashSprite.setFont(&fonts::Font0);
+  splashSprite.setTextColor(TFT_BLACK);
+  splashSprite.drawString(JSON_VERSION, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 - 20 );
+
+  // draw a rectangle for the lower text
+  splashSprite.fillRect(0, M5Cardputer.Display.height() / 2 + 45, M5Cardputer.Display.width(), 55, RGB565(5,5,5));
+  // draw text in small font below
+  splashSprite.setFont(&fonts::Font0);
+  splashSprite.setTextColor(TFT_BLACK);
+  splashSprite.drawString("Williamson Industries", M5Cardputer.Display.width() / 2 + 1, M5Cardputer.Display.height() / 2 + 50 + 1);
+  splashSprite.setTextColor(TFT_GREEN);
+  splashSprite.drawString("Williamson Industries", M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 + 50);
+  
+  //splashSprite.pushSprite(0, 0);
 
 
 }
@@ -82,13 +107,16 @@ void setup(void)
 {  
   initCardputer();
   splash();    
-  
+  machine.kit = -1; // set to -1 so we always set the kit  
   resetState(machine);
+  //String fname = "startup.jsn";
+  //loadDrumMachine(machine, fname);
 }
 
 void loop(void)
 {
   M5Cardputer.update();
+
   updateUI(machine);
   
   delay(1);

@@ -6,7 +6,7 @@
 // one channel
 typedef struct channel_t
 {
-  float volume; // 0.0 to 1.0 (but greater can be used for overdrive)
+  float volume; // 0 - 16, 8 = 100%, each step is +/- 3dB
   int filterCutoff; // 0-16 16=no filter, 0=full filter, 1/16th of samplerate
   int8_t mute;
   int8_t solo;
@@ -51,6 +51,7 @@ typedef struct mixData_t
   int16_t nextIndex;
   int32_t kickDelay;
   int16_t currentVelocity;
+  float gain;
   float currentFilter;  
   float filterAlpha;
 } mixData_t;

@@ -1,87 +1,139 @@
 // stores and retrieves DrumMachine data
 #include "serialize.h"
 
-#define JSON_SIZE 256
+#define SERIALIZE_ID 0xBEA101
 
-void serializeDrumMachine(DrumMachine &dm, String &json) {
-    StaticJsonDocument<JSON_SIZE> doc;
-
-    // Version number (incompatible files must use a different version number!)
-    doc["version"] = JSON_VERSION;
-
-    // global settings
-    doc["bpm"] = dm.bpm;
-    doc["swing"] = dm.swing;
-    doc["pattern"] = dm.pattern;
-    doc["kit"] = dm.kit;
-    doc["volume"] = dm.volume;
-    
-    // the sequence of patterns
-    doc["patternSequence"] = String(dm.patternSequence);
-    
-    
-    // channel states
-    JsonArray channels = doc["channels"].to<JsonArray>();
-    for (int i = 0; i < nChans; i++) {
-        JsonObject channel = channels.createNestedObject();
-        channel["volume"] = dm.channels[i].volume;
-        channel["mute"] = dm.channels[i].mute;
-        channel["solo"] = dm.channels[i].solo;
-        channel["filterCutoff"] = dm.channels[i].filterCutoff;
-        channel["_enabled"] = dm.channels[i]._enabled;
-    }
-
-    // all patterns (i.e. the drum data)
-    JsonArray allPatterns = doc["allPatterns"].to<JsonArray>();
-    for (int i = 0; i < nSteps * nChans * maxPatterns; i++) {
-        JsonObject pattern = allPatterns.createNestedObject();
-        pattern["type"] = dm.allPatterns[i].type;        
-        pattern["velocity"] = dm.allPatterns[i].velocity;
-        pattern["kickDelay"] = dm.allPatterns[i].kickDelay;
-    }
-
-    // Convert JSON document to a string    
-    serializeJson(doc, json);
+// write a single integer to the string, followed by a comma
+void addToken(File ser, int32_t value)
+{
+    ser.print(value);
+    ser.print(",");
 }
 
-bool deserializeDrumMachine(DrumMachine &dm, String &json) {
-    StaticJsonDocument<JSON_SIZE> doc;
+// read a single integer from the string, followed by a comma
+int32_t getToken(File ser)
+{
+    int32_t value = 0;    
+    while(ser.peek() != ',' && ser.peek() != -1)
+    {
+        value = value * 10 + (ser.read() - '0');
+    }
+    if(ser.peek() == ',')
+    {
+        ser.read();
+    }
+    return value;
+}
 
-    // Parse the JSON object
-    DeserializationError error = deserializeJson(doc, json);
-    if (error) {
-        return false;
+bool writeDrumMachine(DrumMachine &dm, File &ser)
+{
+    char *buf;    
+    addToken(ser, SERIALIZE_ID);
+    addToken(ser, dm.bpm);
+    addToken(ser, dm.swing);
+    addToken(ser, dm.pattern);
+    addToken(ser, dm.kit);
+    addToken(ser, dm.volume);
+
+    addToken(ser, strlen(dm.patternSequence));
+
+    for(int i=0;i<strlen(dm.patternSequence);i++)
+    {
+        addToken(ser, dm.patternSequence[i]);
     }
 
-    // must match the version
-    if(doc["version"] != JSON_VERSION) {
-        return false;
+    addToken(ser, nChans);
+
+    for(int i=0;i<nChans;i++)
+    {
+        addToken(ser, dm.channels[i].volume);
+        addToken(ser, dm.channels[i].mute);
+        addToken(ser, dm.channels[i].solo);
+        addToken(ser, dm.channels[i].filterCutoff);
+        addToken(ser, dm.channels[i]._enabled);
     }
 
-    dm.bpm = doc["bpm"];
-    dm.swing = doc["swing"];
-    dm.pattern = doc["pattern"];
-    dm.kit = doc["kit"];
-    dm.volume = doc["volume"];
-
-    doc["patternSequence"].as<String>().toCharArray(dm.patternSequence, maxPatternSequence);    
-    
-    
-    JsonArray channels = doc["channels"].as<JsonArray>();
-    for (int i = 0; i < nChans; i++) {
-        dm.channels[i].volume = channels[i]["volume"];
-        dm.channels[i].mute = channels[i]["mute"];
-        dm.channels[i].solo = channels[i]["solo"];
-        dm.channels[i].filterCutoff = channels[i]["filterCutoff"];
-        dm.channels[i]._enabled = channels[i]["_enabled"];
+    addToken(ser, nSteps * nChans * maxPatterns);
+    for(int i=0;i<nSteps * nChans * maxPatterns;i++)
+    {
+        addToken(ser, dm.allPatterns[i].type);
+        addToken(ser, dm.allPatterns[i].velocity);
+        addToken(ser, dm.allPatterns[i].kickDelay);
     }
 
-    JsonArray allPatterns = doc["allPatterns"].as<JsonArray>();
-    for (int i = 0; i < nSteps * nChans * maxPatterns; i++) {
-        dm.allPatterns[i].type = allPatterns[i]["type"];
-        dm.allPatterns[i].velocity = allPatterns[i]["velocity"];
-        dm.allPatterns[i].kickDelay = allPatterns[i]["kickDelay"];
-    }
+    addToken(ser, 0);    
+    Serial.println("Serialized DrumMachine");
     
     return true;
+
+}
+
+bool readDrumMachine(DrumMachine &dm, File &ser)
+{
+
+    int pos = 0;
+    int32_t id;
+    id = getToken(ser);
+        
+    if(id != SERIALIZE_ID)
+    {
+        Serial.println("Invalid serialize ID");
+        return false;
+    }
+    dm.bpm = getToken(ser);
+    dm.swing = getToken(ser);
+    dm.pattern = getToken(ser);
+    dm.kit = getToken(ser);
+    dm.volume = getToken(ser);
+
+
+    int len = getToken(ser);
+    char patternSequence[len+1];
+    for(int i=0;i<len;i++)
+    {
+        patternSequence[i] = getToken(ser);
+    }
+    patternSequence[len] = '\0';
+    strcpy(dm.patternSequence, patternSequence);
+    
+    int32_t nChansCheck = getToken(ser);
+    if(nChansCheck != nChans)
+    {
+        Serial.println("Invalid number of channels");
+        return false;
+    }
+
+    for(int i=0;i<nChans;i++)
+    {
+        dm.channels[i].volume = getToken(ser);
+        dm.channels[i].mute = getToken(ser);
+        dm.channels[i].solo = getToken(ser);
+        dm.channels[i].filterCutoff = getToken(ser);
+        dm.channels[i]._enabled = getToken(ser);
+    }
+
+    int patLen = getToken(ser);
+    if(patLen != nSteps * nChans * maxPatterns)
+    {
+        Serial.println("Invalid number of patterns");
+        return false;
+    }
+
+    for(int i=0;i<nSteps * nChans * maxPatterns;i++)
+    {
+        dm.allPatterns[i].type = getToken(ser);
+        dm.allPatterns[i].velocity = getToken(ser);
+        dm.allPatterns[i].kickDelay = getToken(ser);
+    }
+
+    int end = getToken(ser);
+    if(end != 0)
+    {
+        Serial.println("Invalid end token");
+        return false;
+    }
+
+    Serial.println("Deserialized DrumMachine");
+    return true;
+
 }
