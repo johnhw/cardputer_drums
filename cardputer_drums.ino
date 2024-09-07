@@ -15,8 +15,10 @@
 // TODO:
 
 
-// file UI: filtered file list
-// channel colume overdrive (16 +/- 3db, default = 8 = 0db)
+// live mode (inc. kick timing)
+// demo song
+// fix pattern sequence mode one pattern lag
+// file UI: filtered file list, pattern cursor
 // kit editor
 // chords in kits
 // Loop samples
@@ -24,7 +26,6 @@
 
 
 // maybe:
-
 // headphone USB-C audio
 
 
@@ -45,6 +46,17 @@ void loop(void);
 
 static struct DrumMachine machine; // global drum machine state
 
+// set up the Flash filesystem
+void initFS()
+{
+  initLittleFS();
+  createDirIfNotExists(basePathRoot);
+  createDirIfNotExists(basePathPattern); // make sure we can write to the chosen dir
+  createDirIfNotExists(basePathKits); 
+  createDirIfNotExists(basePathSamples); 
+  
+}
+
 // Initialize the Cardputer
 void initCardputer()
 {
@@ -54,19 +66,13 @@ void initCardputer()
   M5Cardputer.Display.setRotation(1);
   M5Cardputer.Speaker.setVolume(255);
   M5Cardputer.Speaker.begin();
-  initLittleFS();
-  createDirIfNotExists(basePathRoot);
-  createDirIfNotExists(basePathPattern); // make sure we can write to the chosen dir
-  createDirIfNotExists(basePathKits); 
-  createDirIfNotExists(basePathSamples); 
-  
+  initFS();
 }
 
 void splash()
 {
 
-
-  
+  //M5Cardputer.Display.drawPng(splashPNG, sizeof(splashPNG)/sizeof(splashPNG[0]), 0, 0);
 
   //LGFX_Sprite splashSprite = LGFX_Sprite(&M5.Lcd);
   // LGFX_Sprite splashSprite = LGFX_Sprite(&M5Cardputer.Display);
@@ -111,6 +117,8 @@ void setup(void)
   resetState(machine);
   String fname = "startup";
   loadDrumMachine(machine, fname);
+  if(machine.kit==-1)
+    setKit(machine, 0); // set the default kit if one didn't get loaded
 }
 
 void loop(void)

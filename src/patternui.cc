@@ -12,6 +12,14 @@ void getCursorPixelPos(DrumMachine &dm, int16_t step, int16_t chan, int16_t &x, 
   y = chan * 12 + 12;
 }
 
+void setCursor(DrumMachine &dm, int16_t step, int16_t chan)
+{
+  drawCursor(dm, 0);
+  dm.cursor.step = step;
+  dm.cursor.chan = chan;
+  dm.cursor.dirty = 1;
+}
+
 void moveCursor(DrumMachine &dm, int x, int y)
 {
   drawCursor(dm, 0);
@@ -179,6 +187,21 @@ void drawChannelBars(DrumMachine &dm)
   }
 }
 
+// when we record a live character, we need to 
+// record the sub-division shift as well
+void recordLiveChar(DrumMachine &dm, char ch)
+{
+  setCursorChar(dm, ch);
+  // we also now need to compute the kick and set it
+  // it's the fractional part (only) of playStep *  kickSubdiv
+  int kick = (int)(dm.playStep * kickSubdiv) % kickSubdiv;
+  int index = dm.cursor.step + nSteps * dm.cursor.chan;
+  setCursorKick(dm, kick);
+  // and update the velocity to the current live velocity
+  dm.currentPattern[index].velocity = dm.liveVelocity;
+  dm.cursor.dirty = 1;  
+}
+
 void patternModeKeys(DrumMachine &dm)
 {
 
@@ -220,9 +243,15 @@ void patternModeKeys(DrumMachine &dm)
           if (status.word.size() > 0)
           {
             if (isalpha(status.word[0]))
+            if(dm.liveMode)
+              recordLiveChar(dm, status.word[0]);
+            else
               setCursorChar(dm, status.word[0]);
             if (isdigit(status.word[0]))
+            {
+
               setCursorVel(dm, status.word[0]);
+            }
           }
 
           // help screen
@@ -307,7 +336,7 @@ void patternDeleteCurrent(DrumMachine &dm)
 // toggle between current pattern and pattern sequence mode
 void patternSwitchMode(DrumMachine &dm)
 {
-  dm.patternModeSwitch=1; // request a switch
+  dm.patternModeSwitch = 1; // request a switch
   
   drawTopLine(dm);
 }
@@ -376,6 +405,19 @@ void adjChanVolume(DrumMachine &dm, int adj)
 }
 
 
+void toggleLiveMode(DrumMachine &dm)
+{
+  if (dm.liveMode == 0)
+  {
+    dm.liveMode = 1; 
+  }
+  else
+  {
+    dm.liveMode = 0; 
+  }
+  drawStatus(dm);
+}
+
 void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
 
@@ -394,7 +436,11 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
     adjVolume(dm, -1);
   if (M5Cardputer.Keyboard.isKeyPressed(']'))
     adjVolume(dm, 1);
+  if (M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER))
+    toggleSolo(dm, dm.cursor.chan);
   
+  if (M5Cardputer.Keyboard.isKeyPressed('r'))
+    toggleLiveMode(dm);
   // file operations (to be completed)
   String fname = "startup";
   if(M5Cardputer.Keyboard.isKeyPressed('n'))
@@ -559,7 +605,8 @@ void renderBeatLine(DrumMachine &dm)
   // from change in milliseconds work out how many samples have elapsed
   sampleTime = (ms - dm.syncMillis) * samplerate / 1000;
   // sampleTime -= dm.stepSamples; // adjust for sloppy timing of change
-  int16_t step = sampleTime / dm.stepSamples;
+  dm.playStep = (float)(nSteps * sampleTime) / (float)dm.patternSamples;
+  int16_t step = dm.playStep;
   if (step < 0)
     step += nSteps;
 
@@ -615,7 +662,7 @@ void drawStatus(DrumMachine &dm)
   // Recalculate channels to determine if any are soloed
   int solos = recalcChannels(dm);
 
-  int32_t drawX = 180;
+  int32_t drawX = 172;
   for (int i = 0; i < nChans; i++)
   {
     snprintf(statusLine, 255, "%01d", i + 1);
@@ -641,6 +688,12 @@ void drawStatus(DrumMachine &dm)
     // Draw the channel number
     M5Cardputer.Display.drawString(statusLine, drawX, M5Cardputer.Display.height() - statusHeight);
     drawX += 6; // Move to the next position for the next channel
+  }
+
+  // in live mode, draw a red circle at the right hand side
+  if (dm.liveMode)
+  {
+    M5Cardputer.Display.fillCircle(M5Cardputer.Display.width() - 10, M5Cardputer.Display.height() - statusHeight + 2, 5, RED);
   }
 
   drawTopLine(dm);
@@ -684,6 +737,12 @@ void patternModeUpdate(DrumMachine &dm)
 {
   updateCursor(dm);
   renderBeatLine(dm);
+  // in live mode, move the cursor with the play beat
+  if(dm.liveMode)
+  {
+    if(dm.cursor.step != (int)dm.playStep)
+      setCursor(dm, (int)dm.playStep, dm.cursor.chan);
+  }
   patternModeKeys(dm);
   feedPatternBuffers(dm);
 }

@@ -10,7 +10,7 @@ bool saveFile(const String &path, const String &content) ;
 std::vector<String> listFiles(const String &path);
 bool createDirIfNotExists(const String path);
 bool initLittleFS();
-
+std::vector<String> filterByPrefix(const std::vector<String> &input, const String &prefix);
 
 
 #endif 

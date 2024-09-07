@@ -26,4 +26,10 @@ const String basePathRoot = "/bonnethead";
 #define PLAY_MODE_KIT_EDIT 4
 #define PLAY_MODE_HELP 5 
 
+#define ACTION_NONE 0
+#define ACTION_SAVE 1
+#define ACTION_LOAD 2
+#define ACTION_NEW 3
+
+
 #endif

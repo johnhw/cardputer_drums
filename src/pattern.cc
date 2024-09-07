@@ -113,6 +113,7 @@ void setCursorVel(DrumMachine& dm, char c)
 {
     int index = dm.cursor.step + nSteps * dm.cursor.chan;
     dm.currentPattern[index].velocity = c - '0';
+    dm.liveVelocity = c - '0'; // remember this velocity so we can record in it
     updateMix(dm, dm.cursor.step, dm.cursor.chan);
 }
 

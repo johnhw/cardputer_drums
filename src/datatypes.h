@@ -74,12 +74,18 @@ struct DrumMachine {
     int16_t kit = 0;
     int16_t volume = 0; // 16 volume levels
     char patternSequence[maxPatternSequence];
-    int8_t patternCursor = 0;
-    int8_t patternSeqIndex = 0;
+    float playStep = 0; // the (fractional) step we are currently playing
+    
+    int8_t liveVelocity = 0; // the velocity of the last input, used to set the velocity in live mode
+    int8_t liveMode = 0; // set to record live input
+    int8_t patternCursor = 0; // cursor position inside the pattern sequence
+    int8_t patternSeqIndex = 0; // index into the pattern sequence we are currently playing
     int8_t patternMode = 0; // 0 = one pattern, 1 = sequence
     int8_t patternModeSwitch = 0; // set to indicate that the pattern should switch at the next mix!
     int16_t nKits; // number of kits available (set at start)
     int16_t lastMode; // last mode we were in (so we can return to it)
+    int16_t nextAction; // next action to take (e.g. save, load, etc)
+    String fileName; // the current file name
     cursor_t cursor;
     channel_t channels[nChans];
     chanData_t* currentPattern;

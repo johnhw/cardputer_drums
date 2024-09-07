@@ -41,6 +41,7 @@ constexpr const char* helpStrings[] = {
     "^Channel",
     "fn-0-9 mute chan.",
     "sh-0-9 solo chan.",
+    "fn-r rec. chan.",
     "fn+- dec. cutoff",
     "fn+=: inc. cutoff",
     "fn+\\ dec. vol",
@@ -112,9 +113,6 @@ void setGraphicsModeHelp(DrumMachine &dm)
   M5Cardputer.Display.fillScreen(BLACK);
   M5Cardputer.Display.setFont(&fonts::Font0);
   M5Cardputer.Display.setTextColor(GREEN);
-  int x = 12;
-  int y = 12;
-  
   displayHelpText();
 
 }

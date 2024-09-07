@@ -1,7 +1,7 @@
 // stores and retrieves DrumMachine data
 #include "serialize.h"
 
-#define SERIALIZE_ID 0xBEA101
+#define SERIALIZE_ID 0xBEA102
 
 // write a single integer to the string, followed by a comma
 void addToken(File ser, int32_t value)
@@ -34,6 +34,7 @@ bool writeDrumMachine(DrumMachine &dm, File &ser)
     addToken(ser, dm.pattern);
     addToken(ser, dm.kit);
     addToken(ser, dm.volume);
+    addToken(ser, dm.patternMode);
 
     addToken(ser, strlen(dm.patternSequence));
 
@@ -84,6 +85,8 @@ bool readDrumMachine(DrumMachine &dm, File &ser)
     dm.pattern = getToken(ser);
     dm.kit = getToken(ser);
     dm.volume = getToken(ser);
+
+    dm.patternMode = getToken(ser);
 
 
     int len = getToken(ser);

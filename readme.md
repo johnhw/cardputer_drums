@@ -76,6 +76,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 ### channel
 * `fn+<n>` toggle mute channel `n`
 * `fn+shift+<n>` toggle solo channel `n` (multiple channels can be solo'd)
+* `fn+enter` toggle solo the current channel (where the cursor is)
 * `fn+-` decrease filter cutoff on active channels (16 steps of filter)
 * `fn+=` increase filter cutoff on active channels
 * `fn+\` decrease channel volume on active channels

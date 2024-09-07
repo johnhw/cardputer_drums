@@ -10,10 +10,12 @@
 #include "flash.h"
 #include "serialize.h"
 #include "helpui.h"
+#include "config.h"
 
 #include <LittleFS.h>
 
-void updatePattern(DrumMachine& dm) {
+void updatePattern(DrumMachine &dm)
+{
     recalcBPM(dm);
     recalcChannels(dm);
     setGraphicsModePattern();
@@ -22,7 +24,8 @@ void updatePattern(DrumMachine& dm) {
     requestMix(dm);
 }
 
-void recalcBPM(DrumMachine& dm) {
+void recalcBPM(DrumMachine &dm)
+{
     dm.stepSamples = samplerate * 60 / (dm.bpm * 4);
     dm.oneKickTime = dm.stepSamples / kickSubdiv;
     dm.patternSamples = dm.stepSamples * nSteps;
@@ -39,20 +42,20 @@ void initCursor(cursor_t &cursor)
     cursor.dirty = 0;
 }
 
-
 // save the current drum machine state to a file
-bool saveDrumMachine(DrumMachine &dm, String &fname) { 
-        
+bool saveDrumMachine(DrumMachine &dm, String &fname)
+{
+
     File ser = LittleFS.open(basePathPattern + "/" + fname, "w");
-    if (!ser) {
+    if (!ser)
+    {
         Serial.println("Failed to open file for writing");
         return false;
     }
     writeDrumMachine(dm, ser);
-    ser.close();    
+    ser.close();
     return true;
 }
-
 
 void reinitState(DrumMachine &dm)
 {
@@ -60,32 +63,35 @@ void reinitState(DrumMachine &dm)
     dm.patternSeqIndex = 0;
     dm.patternMode = 0;
     _setPattern(dm, dm.pattern); // set the pattern pointer
-    updatePattern(dm); // update the pattern / redraw
+    updatePattern(dm);           // update the pattern / redraw
 }
 
 // load a drum machine state from a file
-bool loadDrumMachine(DrumMachine &dm, String &fname) {
-        
+bool loadDrumMachine(DrumMachine &dm, String &fname)
+{
+
     bool success;
     File ser = LittleFS.open(basePathPattern + "/" + fname, "r");
-    if (!ser) {
+    if (!ser)
+    {
         Serial.println("Failed to open file for reading");
         return false;
     }
     int oldKit = dm.kit;
     success = readDrumMachine(dm, ser);
     ser.close();
-    if(!success) {
+    if (!success)
+    {
         Serial.println("Failed to deserialize");
         return false;
     }
-    
+
     reinitState(dm);
-    if(oldKit != dm.kit)
+    if (oldKit != dm.kit)
     {
         oldKit = dm.kit;
         dm.kit = -1;
-        setKit(dm, oldKit); 
+        setKit(dm, oldKit);
     }
     return true;
 }
@@ -94,17 +100,20 @@ void initState(DrumMachine &dm)
 {
     // Allocate mix buffers
     allocateMix(dm);
-    dm.kit = -1; // set to -1 so we always set the kit
-      // Create the drum samples
+    dm.kit = -1;          // set to -1 so we always set the kit
+                          // Create the drum samples
     dm.nKits = nDrumKits; // initialize the number of kits (defined in kits.h)
-    setKit(dm, 0); // set the default kit (note resetState doesn't do this because it's very slow)
 }
 
-// reset the state 
-void resetState(DrumMachine& dm)
+// reset the state
+void resetState(DrumMachine &dm)
 {
     dm.cursor.width = 12;
     dm.cursor.height = 12;
+
+    // reset the mode/action
+    dm.lastMode = PLAY_MODE_PATTERN;
+    dm.nextAction = ACTION_NONE;
 
     // Set global bpm/swing
     dm.bpm = 120;
@@ -112,6 +121,11 @@ void resetState(DrumMachine& dm)
     dm.syncMillis = millis();
     dm.beatTime = 0;
     dm.volume = 16;
+    dm.liveMode = 0;
+    dm.liveVelocity = 0;
+    dm.playStep = 0.0;
+
+    dm.fileName = "";
 
     strcpy(dm.patternSequence, ""); // reset the pattern sequence
     dm.patternCursor = 0;
@@ -126,10 +140,8 @@ void resetState(DrumMachine& dm)
         dm.channels[chan].solo = 0;
         dm.channels[chan].filterCutoff = 0;
         dm.channels[chan]._enabled = 1;
-        
     }
 
-    
     // Recalculate BPM settings and channel configurations
     recalcBPM(dm);
     recalcChannels(dm);
@@ -141,47 +153,40 @@ void resetState(DrumMachine& dm)
         _setPattern(dm, i);
         clearPattern(dm);
     }
-    
 
     // Set the initial pattern
     setPattern(dm, 1);
-
     initCursor(dm.cursor);
-    
+
     // Draw the initial cursor position
     drawCursor(dm, 1);
 
- 
     // Update the pattern
     updatePattern(dm);
-    
 }
 
 // Set the current kit to the given index
 // resynthetizes all samples
-void setKit(DrumMachine& dm, int kit)
+void setKit(DrumMachine &dm, int kit)
 {
     if (kit < 0 || kit >= dm.nKits || dm.kit == kit)
-         return;
+        return;
     dm.kit = kit;
     createSamples(dm, drumKits[dm.kit]);
     requestMix(dm);
 }
 
-
-
-void updateMix(DrumMachine& dm, int16_t step, int16_t chan)
+void updateMix(DrumMachine &dm, int16_t step, int16_t chan)
 {
     // for now, just mix the whole pattern
     // mix();
     dm.syncMix = 1; // flag to update on next loop
 }
 
-void requestMix(DrumMachine& dm)
+void requestMix(DrumMachine &dm)
 {
     dm.syncMix = 1; // flag to update on next loop
 }
-
 
 // in patternMode=0 do nothing;
 // in patternMode=1 advance to next pattern in sequence
@@ -190,29 +195,28 @@ void nextPattern(DrumMachine &dm)
 {
     int pattern;
 
-    if(dm.patternModeSwitch)
+    if (dm.patternModeSwitch)
     {
-      dm.patternModeSwitch = 0; // reset flag      
-      if (dm.patternMode == 0)
-      {
+        dm.patternModeSwitch = 0; // reset flag
+        if (dm.patternMode == 0)
+        {
 
-        dm.patternMode = 1;
-        dm.patternSeqIndex = 0;
-      }
-      else
-      {
-        dm.patternMode = 0;
-      }
+            dm.patternMode = 1;
+            dm.patternSeqIndex = 0;
+        }
+        else
+        {
+            dm.patternMode = 0;
+        }
+        drawTopLine(dm);
     }
-
 
     if (dm.patternMode == 1 && strlen(dm.patternSequence) > 0)
     {
-        
-        pattern = dm.patternSequence[dm.patternSeqIndex] ;
 
-        
-        setPattern(dm, pattern);        
+        pattern = dm.patternSequence[dm.patternSeqIndex];
+
+        setPattern(dm, pattern);
         updatePattern(dm);
         dm.patternSeqIndex++;
         if (dm.patternSeqIndex >= strlen(dm.patternSequence))
@@ -226,7 +230,7 @@ void nextPattern(DrumMachine &dm)
     }
 }
 
-void updateUI(DrumMachine& dm)
+void updateUI(DrumMachine &dm)
 {
     if (dm.playMode == PLAY_MODE_PATTERN)
         patternModeUpdate(dm);
@@ -236,32 +240,29 @@ void updateUI(DrumMachine& dm)
         confirmModeUpdate(dm);
     if (dm.playMode == PLAY_MODE_HELP)
         helpModeUpdate(dm);
-        
-
 }
 
 void setPlayMode(DrumMachine &dm, int mode)
 {
-  if(mode == dm.playMode)
-    return; // already in the mode, don't do anything!
+    if (mode == dm.playMode)
+        return; // already in the mode, don't do anything!
 
-  dm.lastMode = dm.playMode;
-  dm.playMode = mode;  
-  if (mode == PLAY_MODE_PATTERN)
-  {
-    updatePattern(dm);
-  }
-  if (mode == PLAY_MODE_PREVIEW)
-  {
-    setGraphicsModePreview();
-  }
-  if (mode == PLAY_MODE_CONFIRM)
-  {
-    setGraphicsModeConfirm();
-  }
-  if(mode == PLAY_MODE_HELP)
-  {
-    setGraphicsModeHelp(dm);
-  }
-  
+    dm.lastMode = dm.playMode;
+    dm.playMode = mode;
+    if (mode == PLAY_MODE_PATTERN)
+    {
+        updatePattern(dm);
+    }
+    if (mode == PLAY_MODE_PREVIEW)
+    {
+        setGraphicsModePreview();
+    }
+    if (mode == PLAY_MODE_CONFIRM)
+    {
+        setGraphicsModeConfirm();
+    }
+    if (mode == PLAY_MODE_HELP)
+    {
+        setGraphicsModeHelp(dm);
+    }
 }
