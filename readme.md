@@ -5,7 +5,7 @@
 
 This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stack.com/products/m5stack-cardputer-kit-w-m5stamps3?srsltid=AfmBOoqHMPXzj-fobFJN0uUYR1yChvbehNYaBXx4sJz9z3Eqjelnhx3n). 
 
-**Now available on M5Burner as "Bonnethead"** (share code: `9XM7KJjXu1gllDH4`)
+**Now available on M5Burner as "Bonnethead"** 
 
 ## Features
 
@@ -18,6 +18,7 @@ This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stac
 * Pattern sequencer
 * Per-channel filters
 * Multiple drum kits
+* Live keydrumming mode
 
 ## UI
 The dot grid indicates the 16x8 steps for the current pattern. 

@@ -2,7 +2,8 @@
 
 #include <M5Cardputer.h>
 #include <vector>
-
+#include <SD.h>
+#include <SPI.h>
 
 
 #define FORMAT_SPIFFS_IF_FAILED true
@@ -128,4 +129,200 @@ std::vector<String> filterByPrefix(const std::vector<String> &input, const Strin
     }
 
     return result;
+}
+
+void initSD()
+{
+    if (!SD.begin()) {
+    Serial.println("SD Card initialization failed!");
+    return;
+  }
+}
+
+bool listKitsSD(std::vector<String> &kits)
+{
+    File root = SD.open("/kits");
+    if (!root) {
+        Serial.println("Failed to open kits directory");
+        return false;
+    }
+    File file = root.openNextFile();
+    while (file) {
+        kits.push_back(String(file.name()));
+        file = root.openNextFile();
+    }
+    return true;
+}
+
+/* Replace all samples in a drum machine with loaded
+files from an SD card, assuming the files are named
+a.wav, b.wav, ..., z.wav */
+#define WAV_HEADER_LEN 44
+
+/* Validate that the 44 byte header is a valid wav file
+    mono, 16 bit, any sample rate */
+void validateWavHeader(byte *buffer)
+{
+    // check fixed header portion
+    if (buffer[0] != 'R' || buffer[1] != 'I' || buffer[2] != 'F' || buffer[3] != 'F') {
+        Serial.println("Invalid WAV header: not RIFF");
+        return false;
+    }
+    if (buffer[22] != 1) {
+        Serial.println("Invalid WAV header: not mono");
+        return false;
+    }
+    if (buffer[34] != 16) {
+        Serial.println("Invalid WAV header: not 16 bit");
+        return false;
+    }
+    return true;
+}
+
+bool loadKitSD(const String &path, DrumMachine &dm)
+{
+    int oldKit = dm.kit;
+    // iterate over a.wav through z.wav
+    for (int i = 0; i < 26; i++) {        
+        String fname = String((char)('a' + i)) + ".wav";
+        File file = SD.open(path + "/" + fname, FILE_READ);
+        // clear existing sample
+        memset(dm.drumSamples[i].data, 0, dm.drumSamples[i].length);
+        // skip missing files
+        if(!file)    continue;                     
+
+        // read the sample
+        int16_t len = file.size();
+        int16_t* buffer = dm->audioBuffers[0];
+        // make len maximum the size of the buffer
+        if (len > dm->waveBufferLen+WAV_HEADER_LEN) {
+            len = dm->waveBufferLen+WAV_HEADER_LEN;
+        }
+
+        // read the header into a buffer
+        byte header[WAV_HEADER_LEN];
+        if (file.read(header, WAV_HEADER_LEN) != WAV_HEADER_LEN) {
+            Serial.println("Failed to read WAV header");
+            continue;
+        }
+
+        bool wav_ok = validateWavHeader(header);
+        if (!wav_ok) {
+            Serial.println("Invalid WAV header");
+            continue;
+        }
+        
+        if (file.read((byte*)buffer, len) != len) {
+            Serial.println("Failed to read sample data");
+            return false;
+        }
+        // copy the sample to the drum machine
+        memcpy(dm.drumSamples[i].data, buffer, len);
+        dm.drumSamples[i].length = len;        
+    }
+    file.close();
+    memset(dm.audioBuffers[0], 0, dm.waveBufferLen);
+    return true;
+}
+
+/* Write a header to a file, with blank length fields, which can then be 
+append to and backpatched later */
+void openWAVToSD(String fname, int16_t samplerate) {
+  File file = SD.open(fname, FILE_WRITE);
+  if (!file) {
+    Serial.println("Failed to open file for writing.");
+    return;
+  }
+
+  // WAV header fields, with placeholders for chunk size and data size
+  uint32_t byte_rate = 2 * samplerate;                // byte rate (sample rate * bytes per sample)
+  byte wavHeader[44] = {
+    0x52, 0x49, 0x46, 0x46,                  // "RIFF"
+    0xDE,                 // Chunk size (little-endian)
+    0xAD,
+    0xBE,
+    0xEF,
+    0x57, 0x41, 0x56, 0x45,                  // "WAVE"
+    0x66, 0x6D, 0x74, 0x20,                  // "fmt "
+    0x10, 0x00, 0x00, 0x00,                  // Subchunk1 size (16 for PCM)
+    0x01, 0x00,                              // Audio format (1 for PCM)
+    0x01, 0x00,                              // Number of channels (1 for mono)
+    (samplerate & 0xFF),                    // Sample rate 
+    ((samplerate >> 8) & 0xFF),
+    ((samplerate >> 16) & 0xFF),
+    ((samplerate >> 24) & 0xFF),    
+    (byte_rate & 0xFF),                     // Byte rate (SampleRate * NumChannels * BitsPerSample/8)
+    ((byte_rate >> 8) & 0xFF),
+    ((byte_rate >> 16) & 0xFF),
+    ((byte_rate >> 24) & 0xFF),
+    0x02, 0x00,                              // Block align (NumChannels * BitsPerSample/8)
+    0x10, 0x00,                              // Bits per sample (16 bits)
+    0x64, 0x61, 0x74, 0x61,                  // "data"
+    0xCA,
+    0xFE,
+    0xBA,
+    0xBE,                                    // Subchunk2 size (data size)    
+  };
+
+  // Write WAV header to file
+  file.write(wavHeader, 44);
+
+  // Close the file
+  file.close();  
+}
+
+/* Add a block of audio data to the end of a WAV file */
+void appendAudioToSD(String fname, int16_t* audioData, size_t length) {
+  File file = SD.open(fname, FILE_APPEND);
+  if (!file) {
+    Serial.println("Failed to open file for writing.");
+    return;
+  }
+
+  // Write audio data to file
+  file.write((byte*)audioData, length);
+
+  // Close the file
+  file.close();
+}
+
+/* Open a file; get its length; and use this to
+backpatch the chuck size and data size fields in the
+WAV header */
+void backpatchAudioToSD(String fname)
+{
+    File file = SD.open(fname, FILE_READ);
+    if (!file) {
+        Serial.println("Failed to open file for reading.");
+        return;
+    }
+    
+    // Get the file size
+    uint32_t fileSize = file.size();
+    file.close();
+
+    File file = SD.open(fname, FILE_WRITE);
+    if(!file) {
+        Serial.println("Failed to open file for writing.");
+        return;
+    }
+
+    uint32_t realFileSize = fileSize - 8; // file size minus 8 bytes for "RIFF" and size fields
+    uint32_t dataChunkSize = fileSize - 44; // size of the data chunk
+    
+    // Backpatch the chunk size and data size fields in the WAV header
+    file.seek(4);
+    file.write((byte)(realFileSize & 0xFF));
+    file.write((byte)((realFileSize >> 8) & 0xFF));
+    file.write((byte)((realFileSize >> 16) & 0xFF));
+    file.write((byte)((realFileSize >> 24) & 0xFF));
+    
+    file.seek(40);
+    file.write((byte)(dataChunkSize & 0xFF));
+    file.write((byte)((dataChunkSize >> 8) & 0xFF));
+    file.write((byte)((dataChunkSize >> 16) & 0xFF));
+    file.write((byte)((dataChunkSize >> 24) & 0xFF));
+    
+    // Close the file
+    file.close();
 }

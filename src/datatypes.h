@@ -83,6 +83,9 @@ struct DrumMachine {
     int8_t patternMode = 0; // 0 = one pattern, 1 = sequence
     int8_t patternModeSwitch = 0; // set to indicate that the pattern should switch at the next mix!
     int16_t nKits; // number of kits available (set at start)
+
+
+    int8_t splashFlag; // are we currently showing the splash screen?
     int16_t lastMode; // last mode we were in (so we can return to it)
     int16_t nextAction; // next action to take (e.g. save, load, etc)
     String fileName; // the current file name

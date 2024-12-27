@@ -11,6 +11,8 @@ std::vector<String> listFiles(const String &path);
 bool createDirIfNotExists(const String path);
 bool initLittleFS();
 std::vector<String> filterByPrefix(const std::vector<String> &input, const String &prefix);
+void initSD();
+void writeWAVToSD(String fname, int16_t* audioData, size_t length);
 
 
 #endif 

@@ -18,9 +18,12 @@ void updatePattern(DrumMachine &dm)
 {
     recalcBPM(dm);
     recalcChannels(dm);
-    setGraphicsModePattern();
-    redrawPattern(dm);
-    drawStatus(dm);
+    if(!dm.splashFlag)
+    {     
+        setGraphicsModePattern();
+        redrawPattern(dm);
+        drawStatus(dm);
+    }
     requestMix(dm);
 }
 
@@ -92,6 +95,13 @@ bool loadDrumMachine(DrumMachine &dm, String &fname)
         oldKit = dm.kit;
         dm.kit = -1;
         setKit(dm, oldKit);
+    }
+
+
+    if(dm.splashFlag)
+    {
+        dm.splashFlag = 0;
+        updatePattern(dm);       
     }
     return true;
 }
@@ -174,6 +184,7 @@ void setKit(DrumMachine &dm, int kit)
     dm.kit = kit;
     createSamples(dm, drumKits[dm.kit]);
     requestMix(dm);
+    
 }
 
 void updateMix(DrumMachine &dm, int16_t step, int16_t chan)

@@ -15,7 +15,8 @@
 // TODO:
 
 
-// live mode (inc. kick timing)
+// fix kit select weirdness
+// render to sd card
 // demo song
 // fix pattern sequence mode one pattern lag
 // file UI: filtered file list, pattern cursor
@@ -114,6 +115,7 @@ void setup(void)
   initCardputer();
   splash();    
   machine.kit = -1; // set to -1 so we always set the kit  
+  machine.splashFlag = true;
   resetState(machine);
   String fname = "startup";
   loadDrumMachine(machine, fname);

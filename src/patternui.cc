@@ -542,6 +542,8 @@ void renderCursor(DrumMachine &dm, int state)
 
 void drawCursor(DrumMachine &dm, int state)
 {
+  if(dm.splashFlag)
+    return;
 
   // "underdraw" next step so that overlaps when kicking forward render correctly
   if (dm.cursor.step < nSteps - 1)
@@ -605,6 +607,7 @@ void renderBeatLine(DrumMachine &dm)
   // from change in milliseconds work out how many samples have elapsed
   sampleTime = (ms - dm.syncMillis) * samplerate / 1000;
   // sampleTime -= dm.stepSamples; // adjust for sloppy timing of change
+  // nb: we might need to adjust this to be accurate
   dm.playStep = (float)(nSteps * sampleTime) / (float)dm.patternSamples;
   int16_t step = dm.playStep;
   if (step < 0)
