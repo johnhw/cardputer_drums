@@ -1,5 +1,4 @@
 #include "flash.h"
-
 #include <M5Cardputer.h>
 #include <vector>
 #include <SD.h>
@@ -99,25 +98,6 @@ std::vector<String> listFiles(const String &path) {
     }
 }
 
-// Create a directory if it does not exist
-bool createDirIfNotExists(const String path) {    
-    
-    // Check if the directory exists
-    if (LittleFS.exists(path)) {        
-        
-        return true;
-    }
-
-    // Try to create the directory
-    if (LittleFS.mkdir(path)) {        
-        
-        return true;
-    } else {
-        LittleFSError("Failed to create directory");
-        return false;
-    }
-}
-
 // select strings with a given prefix
 std::vector<String> filterByPrefix(const std::vector<String> &input, const String &prefix) {
     std::vector<String> result;
@@ -131,17 +111,50 @@ std::vector<String> filterByPrefix(const std::vector<String> &input, const Strin
     return result;
 }
 
-void initSD()
+
+
+
+bool initSD()
 {
     if (!SD.begin()) {
     Serial.println("SD Card initialization failed!");
-    return;
+    return false;
   }
+
+    // create the directories if they don't exist
+    createDirIfNotExistsSD(basePathRoot);
+    createDirIfNotExistsSD(basePathPattern);
+    createDirIfNotExistsSD(basePathKits);
+    createDirIfNotExistsSD(basePathSamples);
+    createDirIfNotExistsSD(basePathRender);
+
+    return true;
 }
+
+// Create a directory if it does not exist
+bool createDirIfNotExistsSD(const String path) {    
+    
+    // Check if the directory exists
+    if (SD.exists(path)) {        
+        
+        return true;
+    }
+
+    // Try to create the directory
+    if (SD.mkdir(path)) {        
+        
+        return true;
+    } else {
+        Serial.println("Failed to create directory");
+        return false;
+    }
+}
+
+
 
 bool listKitsSD(std::vector<String> &kits)
 {
-    File root = SD.open("/kits");
+    File root = SD.open(basePathKits);
     if (!root) {
         Serial.println("Failed to open kits directory");
         return false;
@@ -161,7 +174,7 @@ a.wav, b.wav, ..., z.wav */
 
 /* Validate that the 44 byte header is a valid wav file
     mono, 16 bit, any sample rate */
-void validateWavHeader(byte *buffer)
+bool validateWavHeader(byte *buffer)
 {
     // check fixed header portion
     if (buffer[0] != 'R' || buffer[1] != 'I' || buffer[2] != 'F' || buffer[3] != 'F') {
@@ -179,6 +192,25 @@ void validateWavHeader(byte *buffer)
     return true;
 }
 
+
+/* Write out each drum sample to a file on the SD card
+   named a.wav, b.wav, ..., z.wav */
+bool writeKitSD(const String &path, DrumMachine &dm)
+{   
+    // iterate over a.wav through z.wav
+    for (int i = 0; i < 26; i++) 
+    {
+        String fname = String((char)('a' + i)) + ".wav";        
+        bool success = writeWavSD(fname, samplerate, dm.drumSamples[i].samples, dm.drumSamples[i].len);
+        if(!success) 
+        {
+            Serial.println("Failed to open file for writing: "+fname);
+            continue;
+        }
+    }
+}
+
+
 bool loadKitSD(const String &path, DrumMachine &dm)
 {
     int oldKit = dm.kit;
@@ -187,16 +219,16 @@ bool loadKitSD(const String &path, DrumMachine &dm)
         String fname = String((char)('a' + i)) + ".wav";
         File file = SD.open(path + "/" + fname, FILE_READ);
         // clear existing sample
-        memset(dm.drumSamples[i].data, 0, dm.drumSamples[i].length);
+        memset(dm.drumSamples[i].samples, 0, dm.drumSamples[i].len);
         // skip missing files
         if(!file)    continue;                     
 
         // read the sample
         int16_t len = file.size();
-        int16_t* buffer = dm->audioBuffers[0];
+        int16_t* buffer = dm.audioBuffers[0];
         // make len maximum the size of the buffer
-        if (len > dm->waveBufferLen+WAV_HEADER_LEN) {
-            len = dm->waveBufferLen+WAV_HEADER_LEN;
+        if (len > dm.waveBufferLen+WAV_HEADER_LEN) {
+            len = dm.waveBufferLen+WAV_HEADER_LEN;
         }
 
         // read the header into a buffer
@@ -217,21 +249,51 @@ bool loadKitSD(const String &path, DrumMachine &dm)
             return false;
         }
         // copy the sample to the drum machine
-        memcpy(dm.drumSamples[i].data, buffer, len);
-        dm.drumSamples[i].length = len;        
+        memcpy(dm.drumSamples[i].samples, buffer, len);
+        dm.drumSamples[i].len = len;        
+        file.close();
     }
-    file.close();
+  
     memset(dm.audioBuffers[0], 0, dm.waveBufferLen);
     return true;
 }
 
+/* Scan the /render folder, and find sequential filenames named render-00000.wav, render-00001.wav, etc.
+   Keep scanning until a free filename is found. Return the first free filename */
+String findFreeRenderFilenameSD()
+{
+    String path = basePathRender;
+    File root = SD.open(path);
+    if (!root) {
+        Serial.println("Failed to open render directory");
+        return "";
+    }
+    int i = 0;
+    String fname;
+    while (true) {
+        fname = String("render-") + String(i, 5) + ".wav";
+        if (!SD.exists(path + "/" + fname)) {
+            return fname;
+        }
+        i++;
+    }
+}
+
+
+void write_uint32t(File &file, uint32_t val) {
+    file.write((byte)(val & 0xFF));
+    file.write((byte)((val >> 8) & 0xFF));
+    file.write((byte)((val >> 16) & 0xFF));
+    file.write((byte)((val >> 24) & 0xFF));
+}
+
 /* Write a header to a file, with blank length fields, which can then be 
 append to and backpatched later */
-void openWAVToSD(String fname, int16_t samplerate) {
+bool openWAVToSD(String fname, int16_t samplerate) {
   File file = SD.open(fname, FILE_WRITE);
   if (!file) {
     Serial.println("Failed to open file for writing.");
-    return;
+    return false;
   }
 
   // WAV header fields, with placeholders for chunk size and data size
@@ -269,14 +331,15 @@ void openWAVToSD(String fname, int16_t samplerate) {
 
   // Close the file
   file.close();  
+  return true;
 }
 
 /* Add a block of audio data to the end of a WAV file */
-void appendAudioToSD(String fname, int16_t* audioData, size_t length) {
+bool appendWAVToSD(String fname, int16_t* audioData, size_t length) {
   File file = SD.open(fname, FILE_APPEND);
   if (!file) {
     Serial.println("Failed to open file for writing.");
-    return;
+    return false;
   }
 
   // Write audio data to file
@@ -284,27 +347,29 @@ void appendAudioToSD(String fname, int16_t* audioData, size_t length) {
 
   // Close the file
   file.close();
+    return true;
 }
+
 
 /* Open a file; get its length; and use this to
 backpatch the chuck size and data size fields in the
 WAV header */
-void backpatchAudioToSD(String fname)
+bool backpatchWAVToSD(String fname)
 {
     File file = SD.open(fname, FILE_READ);
     if (!file) {
         Serial.println("Failed to open file for reading.");
-        return;
+        return false;
     }
     
     // Get the file size
     uint32_t fileSize = file.size();
     file.close();
 
-    File file = SD.open(fname, FILE_WRITE);
+    file = SD.open(fname, FILE_WRITE);
     if(!file) {
         Serial.println("Failed to open file for writing.");
-        return;
+        return false;
     }
 
     uint32_t realFileSize = fileSize - 8; // file size minus 8 bytes for "RIFF" and size fields
@@ -312,17 +377,29 @@ void backpatchAudioToSD(String fname)
     
     // Backpatch the chunk size and data size fields in the WAV header
     file.seek(4);
-    file.write((byte)(realFileSize & 0xFF));
-    file.write((byte)((realFileSize >> 8) & 0xFF));
-    file.write((byte)((realFileSize >> 16) & 0xFF));
-    file.write((byte)((realFileSize >> 24) & 0xFF));
+    write_uint32t(file, realFileSize);
     
     file.seek(40);
-    file.write((byte)(dataChunkSize & 0xFF));
-    file.write((byte)((dataChunkSize >> 8) & 0xFF));
-    file.write((byte)((dataChunkSize >> 16) & 0xFF));
-    file.write((byte)((dataChunkSize >> 24) & 0xFF));
+    write_uint32t(file, dataChunkSize);
     
     // Close the file
     file.close();
+    return true;
+}
+
+bool writeWavSD(String fname, int32_t samplerate, int16_t *samples, int32_t len)
+{
+    bool success;
+    success = openWAVToSD(fname, samplerate);
+    if(!success) {
+        return false;
+    }
+    success = appendWAVToSD(fname, samples, len);
+    if(!success) {
+        return false;
+    }
+    success = backpatchWAVToSD(fname);
+    if(!success) {
+        return false;
+    }
 }

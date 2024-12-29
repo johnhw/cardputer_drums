@@ -447,6 +447,9 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
     resetState(dm);
   if (M5Cardputer.Keyboard.isKeyPressed('s'))
     saveDrumMachine(dm, fname);
+   if (M5Cardputer.Keyboard.isKeyPressed('r'))
+    renderPattern(dm);
+
 
   // if (M5Cardputer.Keyboard.isKeyPressed('a'))
   //   saveDrumMachine(dm, "_startup.json");

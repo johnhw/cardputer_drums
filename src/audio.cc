@@ -203,6 +203,82 @@ void mix(DrumMachine& dm)
     }
 }
 
+#include "flash.h"
+
+
+/* Advance to the next pattern in the sequence *without* updating the display */
+void noUINextPattern(DrumMachine &dm)
+{
+    int pattern;
+    // If we are in the sequence mode, and there is a sequence
+    // then advance to the next pattern in the sequence
+    if (dm.patternMode == 1 && strlen(dm.patternSequence) > 0)
+    {
+        pattern = dm.patternSequence[dm.patternSeqIndex];
+        _setPattern(dm, pattern);        
+        dm.patternSeqIndex++;
+        if (dm.patternSeqIndex >= strlen(dm.patternSequence))
+        {
+            dm.patternSeqIndex = 0;
+        }
+    }
+}
+
+/* Render the drum machine output to a WAV file on the SD card */
+bool renderToSD(DrumMachine &dm, String fname)
+{
+    bool complete = false;
+    int32_t len = dm.waveBufferLen;
+    bool success;
+    // reset the pattern index, but restore it afterwards
+    int32_t oldWaveBufferIndex = dm.waveBufferIndex;
+    int32_t oldPatternSeqIndex = dm.patternSeqIndex;    
+    dm.waveBufferIndex = 0;
+    dm.patternSeqIndex = 0;
+    
+    // jump to the initial pattern, if in sequence mode
+    if(dm.patternMode==1)
+        noUINextPattern(dm);
+
+
+    success = openWAVToSD(fname, samplerate); // write the header
+    if(!success)
+        return false;
+
+    while(!complete)
+    {
+        for(int i=0;i<4;i++)
+        {
+            int16_t *buffer = dm.audioBuffers[dm.waveBufferIndex++];
+            mix(dm);
+            success = appendWAVToSD(fname, buffer, len);
+            if(!success)
+                return false;
+        }
+        // no sequence, we are done
+        if(dm.patternMode==0)
+            complete = true;
+        else
+        {
+            // if we are back to the start, we are done
+            if(dm.patternSeqIndex == 0)
+                complete = true;
+            else
+                // advance to the next pattern in the sequence
+                noUINextPattern(dm);          
+        }
+    }
+    // fix the header
+    success = backpatchWAVToSD(fname);
+    if(!success)
+        return false;
+
+    // restore where we were
+    dm.waveBufferIndex = oldWaveBufferIndex;
+    dm.patternSeqIndex = oldPatternSeqIndex;
+    mix(dm);    
+    return true;
+}
 
 // feed the audio buffers with the mixed audio
 void feedPatternBuffers(DrumMachine &dm)

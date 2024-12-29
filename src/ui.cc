@@ -14,6 +14,23 @@
 
 #include <LittleFS.h>
 
+bool renderPattern(DrumMachine &dm)
+{
+    String fname = findFreeRenderFilenameSD();
+    bool success = renderToSD(dm, fname);
+    String msg;
+    if (!success)
+    {
+        msg = "Failed to render";
+        lowerMessage(dm, msg.c_str());
+        return false;
+    }
+    msg = "Rendered to " + fname;
+    lowerMessage(dm, msg.c_str());
+    updatePattern(dm);
+    return true;
+}
+
 void updatePattern(DrumMachine &dm)
 {
     recalcBPM(dm);
@@ -182,9 +199,18 @@ void setKit(DrumMachine &dm, int kit)
     if (kit < 0 || kit >= dm.nKits || dm.kit == kit)
         return;
     dm.kit = kit;
-    createSamples(dm, drumKits[dm.kit]);
-    requestMix(dm);
-    
+    // try loading a cached kit from the SD card
+    String kitName = basePathKits + "/" + "base-" + drumKits[dm.kit] + ".kit";
+    bool success = loadKitSD(dm, kitName);
+    if (!success)
+    {
+        // if we failed to load the kit, create the samples
+        createSamples(dm, drumKits[dm.kit]);
+        // try to write the kit as a cache
+        // (do nothing if it fails; we can always regenerate)
+        saveKitSD(dm, kitName);
+    }    
+    requestMix(dm);    
 }
 
 void updateMix(DrumMachine &dm, int16_t step, int16_t chan)
@@ -206,6 +232,7 @@ void nextPattern(DrumMachine &dm)
 {
     int pattern;
 
+    // Is it time change to the new pattern mode?
     if (dm.patternModeSwitch)
     {
         dm.patternModeSwitch = 0; // reset flag
@@ -222,6 +249,8 @@ void nextPattern(DrumMachine &dm)
         drawTopLine(dm);
     }
 
+    // If we are in the sequence mode, and there is a sequence
+    // then advance to the next pattern in the sequence
     if (dm.patternMode == 1 && strlen(dm.patternSequence) > 0)
     {
 

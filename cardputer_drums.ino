@@ -17,8 +17,8 @@
 
 // fix kit select weirdness
 // render to sd card
-// demo song
-// fix pattern sequence mode one pattern lag
+// kit loading
+// fix pattern sequence mode one pattern lags
 // file UI: filtered file list, pattern cursor
 // kit editor
 // chords in kits
@@ -50,12 +50,8 @@ static struct DrumMachine machine; // global drum machine state
 // set up the Flash filesystem
 void initFS()
 {
-  initLittleFS();
-  createDirIfNotExists(basePathRoot);
-  createDirIfNotExists(basePathPattern); // make sure we can write to the chosen dir
-  createDirIfNotExists(basePathKits); 
-  createDirIfNotExists(basePathSamples); 
-  
+  initLittleFS();  
+  initSD();
 }
 
 // Initialize the Cardputer

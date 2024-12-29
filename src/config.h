@@ -12,10 +12,11 @@ static constexpr const int16_t cursorFlashTime = 200;
 static constexpr const int16_t maxPatternSequence = 32;
 static constexpr const int16_t maxFilterCutoff = 16; // number of steps in the filter cutoff
 static constexpr const int16_t maxChannelVolume = 16; // number of steps in the channel volume setting
-const String VERSION = "1.0.1";
+const String VERSION = "1.0.2";
 const String basePathPattern = "/bonnethead/patterns"; // paths in the filesystem to save/load from
 const String basePathKits = "/bonnethead/kits"; 
 const String basePathSamples =  "/bonnethead/samples"; 
+const String basePathRender = "/bonnethead/render";
 const String basePathRoot = "/bonnethead"; 
 
 // pattern mode

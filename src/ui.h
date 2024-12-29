@@ -18,4 +18,5 @@ void updateUI(DrumMachine& dm);
 void initState(DrumMachine& dm);
 bool loadDrumMachine(DrumMachine &dm, String &fname);
 bool saveDrumMachine(DrumMachine &dm, String &fname);
+bool renderPattern(DrumMachine &dm);
 #endif

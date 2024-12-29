@@ -19,6 +19,8 @@ This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stac
 * Per-channel filters
 * Multiple drum kits
 * Live keydrumming mode
+* Render to SD card
+* Sampled drum kits
 
 ## UI
 The dot grid indicates the 16x8 steps for the current pattern. 
