@@ -187,6 +187,17 @@ void drawChannelBars(DrumMachine &dm)
   }
 }
 
+// if delete is down, then delete whatever is under the character
+void checkLiveDelete(DrumMachine &dm)
+{
+  if(M5Cardputer.Keyboard.isKeyPressed(KEY_BACKSPACE))
+  {
+    int index = dm.cursor.step + nSteps * dm.cursor.chan;
+    setCursorChar(dm, 0);
+    dm.cursor.dirty = 1;
+  }
+}
+
 // when we record a live character, we need to 
 // record the sub-division shift as well
 void recordLiveChar(DrumMachine &dm, char ch)
@@ -489,26 +500,49 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   if (digit >= 0 && digit < nChans)
   {
       toggleMute(dm, digit);
+      redrawPattern(dm);
   }
+
   if(M5Cardputer.Keyboard.isKeyPressed('!'))
+  {
     toggleSolo(dm, 0);
+    redrawPattern(dm);
+  }
   if(M5Cardputer.Keyboard.isKeyPressed('@'))
+  {
     toggleSolo(dm, 1);
+    redrawPattern(dm);
+  }
   if(M5Cardputer.Keyboard.isKeyPressed('#'))
+  {
     toggleSolo(dm, 2);
+    redrawPattern(dm);
+  }
   if(M5Cardputer.Keyboard.isKeyPressed('$'))
+  {
     toggleSolo(dm, 3);
+    redrawPattern(dm);
+  }
   if(M5Cardputer.Keyboard.isKeyPressed('%'))  
+  {
     toggleSolo(dm, 4);
+    redrawPattern(dm);
+  }
   if(M5Cardputer.Keyboard.isKeyPressed('^'))  
+  {
     toggleSolo(dm, 5);
+    redrawPattern(dm);
+  }
   if(M5Cardputer.Keyboard.isKeyPressed('&'))
+  {
     toggleSolo(dm, 6);
+    redrawPattern(dm);
+  }
   if(M5Cardputer.Keyboard.isKeyPressed('*'))  
+  {
     toggleSolo(dm, 7);
-  
-
-
+    redrawPattern(dm);
+  }
 
 }
 
@@ -535,6 +569,14 @@ void renderCursor(DrumMachine &dm, int state)
   int boxOffY = -2;
   int boxX = drawX + boxOffX;
   int boxY = drawY + boxOffY;
+
+  // check if channel is muted; if so, gray it
+  if (dm.channels[dm.cursor.chan].mute)
+    charColor = RGB565(5, 5, 5);
+
+  // check if channel is solo; if so, highlight it
+  if (dm.channels[dm.cursor.chan].solo)
+    charColor = RGB565(5, 0, 0);
 
   // Render cursor based on state
   if (state == 0) // no flash
@@ -758,7 +800,10 @@ void patternModeUpdate(DrumMachine &dm)
   if(dm.liveMode)
   {
     if(dm.cursor.step != (int)dm.playStep)
+    {
       setCursor(dm, (int)dm.playStep, dm.cursor.chan);
+      checkLiveDelete(dm);
+    }
   }
   patternModeKeys(dm);
   feedPatternBuffers(dm);

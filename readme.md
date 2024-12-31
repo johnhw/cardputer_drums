@@ -29,7 +29,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 
 #### Top
 * [0] Pattern number
-* If there's a pattern sequence, the patterns appear next to the pattern number (e.g. `12241223`)
+* If there's a pattern sequence, the patterns appear next to the pattern number at the top line (e.g. `12241223`)
 
 ### Bottom
 * **BPM** current BPM (60-320)
@@ -95,7 +95,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 ### clipboard
 * `fn+d` delete current pattern
 * `fn+c` copy current pattern to clipboard
-* `fn+c` cut current pattern to clipboard
+* `fn+x` cut current pattern to clipboard
 * `fn+v` paste current pattern to clipboard
 * NOTE: all clipboard functions operate only on currently enabled channels. So e.g. solo'ing one channel allows you to selectively delete/copy it (or muting all but three channels, etc.)
 

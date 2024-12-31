@@ -24,7 +24,7 @@ void drawTopLine(DrumMachine &dm);
 void lowerMessage(DrumMachine &dm, const char *message);
 void adjChanFilter(DrumMachine &dm, int adj);
 void adjChanVolume(DrumMachine &dm, int adj);
-  
+void checkLiveDelete(DrumMachine &dm);  
 
 
 #endif

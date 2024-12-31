@@ -25,9 +25,7 @@
 
 // fix pattern sequence mode one pattern lags
 // file UI: filtered file list, pattern cursor
-// hold del to erase in livedrum
-// show channel mutes on grid squares
-// fix load kit 00
+// fix load kit 00 / kits don't sound the same on reload
 // kit editor
 // chords in kits
 // Loop samples
