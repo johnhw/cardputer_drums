@@ -1,3 +1,11 @@
+#include <SD.h>
+#include <sd_defines.h>
+#include <sd_diskio.h>
+
+#include <SD.h>
+#include <sd_defines.h>
+#include <sd_diskio.h>
+
 
 /**
  * @file cardputer_drums
@@ -15,11 +23,11 @@
 // TODO:
 
 
-// fix kit select weirdness
-// render to sd card
-// kit loading
 // fix pattern sequence mode one pattern lags
 // file UI: filtered file list, pattern cursor
+// hold del to erase in livedrum
+// show channel mutes on grid squares
+// fix load kit 00
 // kit editor
 // chords in kits
 // Loop samples

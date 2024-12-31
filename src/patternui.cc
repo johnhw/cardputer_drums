@@ -196,7 +196,10 @@ void recordLiveChar(DrumMachine &dm, char ch)
   // it's the fractional part (only) of playStep *  kickSubdiv
   int kick = (int)(dm.playStep * kickSubdiv) % kickSubdiv;
   int index = dm.cursor.step + nSteps * dm.cursor.chan;
-  setCursorKick(dm, kick);
+  if(!dm.liveQuantize) // add the "kick" only in non-quantized mode
+    setCursorKick(dm, kick);
+  else
+      setCursorKick(dm, 0);
   // and update the velocity to the current live velocity
   dm.currentPattern[index].velocity = dm.liveVelocity;
   dm.cursor.dirty = 1;  
@@ -439,8 +442,16 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   if (M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER))
     toggleSolo(dm, dm.cursor.chan);
   
-  if (M5Cardputer.Keyboard.isKeyPressed('r'))
+  if (M5Cardputer.Keyboard.isKeyPressed('k'))
+  {
+    dm.liveQuantize = 0;
     toggleLiveMode(dm);
+  }
+  if(M5Cardputer.Keyboard.isKeyPressed('K'))
+  {
+    dm.liveQuantize = 1;
+    toggleLiveMode(dm);
+  }
   // file operations (to be completed)
   String fname = "startup";
   if(M5Cardputer.Keyboard.isKeyPressed('n'))

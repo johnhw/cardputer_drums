@@ -19,7 +19,7 @@ typedef struct sample_t
 {
   int16_t *samples = 0;
   int32_t len = 0;
-  int32_t freqIncrement = 0; // 32768 = 1.0
+  int32_t freqIncrement = 0; // 32768 = 1.0  
 } sample_t;
 
 // one step of a channel
@@ -78,6 +78,7 @@ struct DrumMachine {
     
     int8_t liveVelocity = 0; // the velocity of the last input, used to set the velocity in live mode
     int8_t liveMode = 0; // set to record live input
+    int8_t liveQuantize = 0; // set to quantize live input
     int8_t patternCursor = 0; // cursor position inside the pattern sequence
     int8_t patternSeqIndex = 0; // index into the pattern sequence we are currently playing
     int8_t patternMode = 0; // 0 = one pattern, 1 = sequence

@@ -6,10 +6,9 @@
 #include "pattern.h"
 #include "ui.h"
 
-
 // threshold is 0.0 to 1.0. all other values in samples
 int32_t findSampleEnd(int16_t *sample, int32_t len, int32_t win, double threshold)
-{    
+{
     // work backward through the array, stepping by win each time
     for (int32_t i = len - win; i > 0; i -= win)
     {
@@ -28,21 +27,31 @@ int32_t findSampleEnd(int16_t *sample, int32_t len, int32_t win, double threshol
     return win;
 }
 
-
-
-void allocSample(DrumMachine& dm, int8_t index, int32_t len) {
-    dm.drumSamples[index].samples = (int16_t*)allocBuffer(dm.drumSamples[index].samples, len, sizeof(int16_t));
+void allocSample(DrumMachine &dm, int8_t index, int32_t len)
+{
+    dm.drumSamples[index].samples = (int16_t *)allocBuffer(dm.drumSamples[index].samples, len, sizeof(int16_t));
     dm.drumSamples[index].len = len;
     dm.drumSamples[index].freqIncrement = 32768; // for fixed point frequency shifting
 }
 
-void allocateMix(DrumMachine& dm) {
+void freeSample(DrumMachine &dm, int8_t index)
+{
+    if (dm.drumSamples[index].samples != nullptr)
+    {
+        free(dm.drumSamples[index].samples);
+        dm.drumSamples[index].samples = nullptr;
+    }
+}
+
+void allocateMix(DrumMachine &dm)
+{
     int32_t bufSamples;
     int32_t maxPatSamples;
     maxPatSamples = nSteps * samplerate * 60 / (minBPM * 4);
     bufSamples = maxPatSamples / 4;
-    for (int i = 0; i < 4; i++) {
-        dm.audioBuffers[i] = (int16_t*)allocBuffer(dm.audioBuffers[i], bufSamples, sizeof(int16_t));
+    for (int i = 0; i < 4; i++)
+    {
+        dm.audioBuffers[i] = (int16_t *)allocBuffer(dm.audioBuffers[i], bufSamples, sizeof(int16_t));
     }
     dm.waveBufferIndex = 0;
 }
@@ -53,12 +62,12 @@ void autoSample(DrumMachine &dm, int drumIndex)
 {
     // use audiobuffers as a scratch space
     int32_t len = findSampleEnd(dm.audioBuffers[0], dm.waveBufferLen, 100, 0.03);
+    freeSample(dm, drumIndex);
     allocSample(dm, drumIndex, len);
     memcpy(dm.drumSamples[drumIndex].samples, dm.audioBuffers[0], len * sizeof(int16_t));
     memset(dm.audioBuffers[0], 0, dm.waveBufferLen * sizeof(int16_t));
     return;
 }
-
 
 void makeSynth(DrumMachine &dm, int index, synth_t *synth)
 {
@@ -69,39 +78,35 @@ void makeSynth(DrumMachine &dm, int index, synth_t *synth)
     autoSample(dm, index);
 }
 
-
-
-void createSamples(DrumMachine& dm, kit_t &kit)
+void createSamples(DrumMachine &dm, kit_t &kit)
 {
 
-   // initialise with dummy samples
-  for(int i=0;i<26;i++)
-  {
-    allocSample(dm, i, 1);
-  }
+    // initialise with dummy samples
+    for (int i = 0; i < 26; i++)
+    {
+        allocSample(dm, i, 1);
+    }
 
-  // 8 semitones from middle-c
-  int16_t noteFreqs[] = {261, 294, 330, 350, 392, 440, 493, 523};
+    // 8 semitones from middle-c
+    int16_t noteFreqs[] = {261, 294, 330, 350, 392, 440, 493, 523};
 
-  synth_t bass = kit.synths[0];
+    synth_t bass = kit.synths[0];
 
-  // sample 0 is empty and not allocated
+    // sample 0 is empty and not allocated
 
-  // kit element 0 is the bass and repeated 8 times, for slots 1-9
-  for(int i=1;i<9;i++)
-  {
-    bass.startFreq = noteFreqs[i-1] * 0.25;
-    makeSynth(dm, i, &bass);
-  }
+    // kit element 0 is the bass and repeated 8 times, for slots 1-9
+    for (int i = 1; i < 9; i++)
+    {
+        bass.startFreq = noteFreqs[i - 1] * 0.25;
+        makeSynth(dm, i, &bass);
+    }
 
-  // the remaining 17 are the drum kit
-  for(int i=9;i<26;i++)    
-  {
-    bass = kit.synths[i-8];
-    makeSynth(dm, i, &bass);
-  }
-
-   
+    // the remaining 17 are the drum kit
+    for (int i = 9; i < 26; i++)
+    {
+        bass = kit.synths[i - 8];
+        makeSynth(dm, i, &bass);
+    }
 }
 
 float fast_tanh(float x)
@@ -109,7 +114,7 @@ float fast_tanh(float x)
     return 32767.0 * tanh(x / 32767.0);
 }
 
-void mix(DrumMachine& dm)
+void mix(DrumMachine &dm)
 {
     int chan, i, j, k;
     mixData_t mixData[nChans];
@@ -131,10 +136,10 @@ void mix(DrumMachine& dm)
         mixData[chan].gain = powf(1.4142, (dm.channels[chan].volume - 8));
         mixData[chan].currentVelocity = 0;
         mixData[chan].currentFilter = 0.0f;
-        if(dm.channels[chan].filterCutoff == 0)        
+        if (dm.channels[chan].filterCutoff == 0)
             mixData[chan].filterAlpha = 0.0f;
         else
-            mixData[chan].filterAlpha = iirAlpha(samplerate, (maxFilterCutoff-dm.channels[chan].filterCutoff) * samplerate / (maxFilterCutoff*8));        
+            mixData[chan].filterAlpha = iirAlpha(samplerate, (maxFilterCutoff - dm.channels[chan].filterCutoff) * samplerate / (maxFilterCutoff * 8));
     }
     k = 0;
     // for each buffer
@@ -156,7 +161,7 @@ void mix(DrumMachine& dm)
                     if (newIndex % 2 == 0)
                         mixData[chan].kickDelay = 0; // no swing on downbeats
                     else
-                        mixData[chan].kickDelay = dm.stepSamples * dm.swing / 200; // apply swing (max=50% delay)
+                        mixData[chan].kickDelay = dm.stepSamples * dm.swing / 200;                // apply swing (max=50% delay)
                     mixData[chan].kickDelay += getKickDelay(dm, newIndex, chan) * dm.oneKickTime; // add on forced kick delay in the channel
                 }
 
@@ -175,14 +180,14 @@ void mix(DrumMachine& dm)
                 mixData[chan].kickDelay--;
 
                 // copy in the sample, if there's more to copy
-                if (mixData[chan].currentSample)
+                if (mixData[chan].currentSample && mixData[chan].currentSample->len != 0)
                 {
-                    //float in = fast_tanh(mixData[chan].currentSample->samples[mixData[chan].sampleIndex++] * mixData[chan].gain);
+                    // float in = fast_tanh(mixData[chan].currentSample->samples[mixData[chan].sampleIndex++] * mixData[chan].gain);
                     float in = mixData[chan].currentSample->samples[mixData[chan].sampleIndex++] * mixData[chan].gain;
-                    
+
                     mixData[chan].currentFilter = mixData[chan].filterAlpha * mixData[chan].currentFilter + (1.0f - mixData[chan].filterAlpha) * in;
                     out += mixData[chan].currentVelocity * mixData[chan].currentFilter;
-                    
+
                     // overran the sample, so stop
                     if (mixData[chan].sampleIndex >= mixData[chan].currentSample->len)
                     {
@@ -196,7 +201,7 @@ void mix(DrumMachine& dm)
                 out = 32767;
             if (out < -32767)
                 out = -32767;
-            
+
             buffer[j] = out;
             k++;
         }
@@ -204,7 +209,6 @@ void mix(DrumMachine& dm)
 }
 
 #include "flash.h"
-
 
 /* Advance to the next pattern in the sequence *without* updating the display */
 void noUINextPattern(DrumMachine &dm)
@@ -215,7 +219,7 @@ void noUINextPattern(DrumMachine &dm)
     if (dm.patternMode == 1 && strlen(dm.patternSequence) > 0)
     {
         pattern = dm.patternSequence[dm.patternSeqIndex];
-        _setPattern(dm, pattern);        
+        _setPattern(dm, pattern);
         dm.patternSeqIndex++;
         if (dm.patternSeqIndex >= strlen(dm.patternSequence))
         {
@@ -232,76 +236,89 @@ bool renderToSD(DrumMachine &dm, String fname)
     bool success;
     // reset the pattern index, but restore it afterwards
     int32_t oldWaveBufferIndex = dm.waveBufferIndex;
-    int32_t oldPatternSeqIndex = dm.patternSeqIndex;    
+    int32_t oldPatternSeqIndex = dm.patternSeqIndex;
+    String fullPath;
+    fullPath = fname;
     dm.waveBufferIndex = 0;
     dm.patternSeqIndex = 0;
-    
     // jump to the initial pattern, if in sequence mode
-    if(dm.patternMode==1)
+    if (dm.patternMode == 1)
         noUINextPattern(dm);
 
-
-    success = openWAVToSD(fname, samplerate); // write the header
-    if(!success)
-        return false;
-
-    while(!complete)
+    success = openWAVToSD(fullPath, samplerate); // write the header
+    if (!success)
     {
-        for(int i=0;i<4;i++)
+        Serial.println("Failed to open file for writing");
+        return false;
+    }
+
+    while (!complete)
+    {
+        for (int i = 0; i < 4; i++)
         {
-            int16_t *buffer = dm.audioBuffers[dm.waveBufferIndex++];
+            if (dm.waveBufferIndex == 4)
+                dm.waveBufferIndex = 0;
+            int16_t *buffer = dm.audioBuffers[dm.waveBufferIndex];
             mix(dm);
-            success = appendWAVToSD(fname, buffer, len);
-            if(!success)
+            dm.waveBufferIndex++;
+
+            success = appendWAVToSD(fullPath, buffer, len);
+
+            if (!success)
+            {
+                Serial.println("Failed to append buffer to file");
                 return false;
+            }
+            else
+                Serial.println("Appended buffer to file");
         }
         // no sequence, we are done
-        if(dm.patternMode==0)
+        if (dm.patternMode == 0)
             complete = true;
         else
         {
+            Serial.printf("PatternSeqIndex: %d\n", dm.patternSeqIndex);
             // if we are back to the start, we are done
-            if(dm.patternSeqIndex == 0)
+            if (dm.patternSeqIndex == 0)
                 complete = true;
             else
                 // advance to the next pattern in the sequence
-                noUINextPattern(dm);          
+                noUINextPattern(dm);
         }
     }
+    Serial.println("Backpatching WAV header");
     // fix the header
-    success = backpatchWAVToSD(fname);
-    if(!success)
+    success = backpatchWAVToSD(fullPath);
+    if (!success)
         return false;
-
     // restore where we were
     dm.waveBufferIndex = oldWaveBufferIndex;
     dm.patternSeqIndex = oldPatternSeqIndex;
-    mix(dm);    
+    mix(dm);
     return true;
 }
 
 // feed the audio buffers with the mixed audio
 void feedPatternBuffers(DrumMachine &dm)
 {
-  // room in the queue? stuff the buffers
-  while (M5Cardputer.Speaker.isPlaying(0) != 2)
-  {
-    M5Cardputer.Speaker.playRaw(dm.audioBuffers[dm.waveBufferIndex++], dm.waveBufferLen, samplerate, false, 1, 0);
-    if (dm.waveBufferIndex == 2)
+    // room in the queue? stuff the buffers
+    while (M5Cardputer.Speaker.isPlaying(0) != 2)
     {
-      if (dm.syncMix) // mix in time for the next buffer change
-      {
-        dm.syncMix = 0;
-        mix(dm);
-      }
-  
-      dm.syncMillis = millis();
-      nextPattern(dm); // advance the pattern (only does anything in pattern sequence mode)
+        M5Cardputer.Speaker.playRaw(dm.audioBuffers[dm.waveBufferIndex++], dm.waveBufferLen, samplerate, false, 1, 0);
+        if (dm.waveBufferIndex == 2)
+        {
+            if (dm.syncMix) // mix in time for the next buffer change
+            {
+                dm.syncMix = 0;
+                mix(dm);
+            }
+            dm.syncMillis = millis();
+            nextPattern(dm); // advance the pattern (only does anything in pattern sequence mode)
+        }
+        if (dm.waveBufferIndex > 3)
+        {
+            dm.waveBufferIndex = 0;
+        }
+        M5Cardputer.update();
     }
-    if (dm.waveBufferIndex > 3)
-    {
-      dm.waveBufferIndex = 0;
-    }
-    M5Cardputer.update();
-  }
 }

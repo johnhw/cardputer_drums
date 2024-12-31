@@ -11,6 +11,7 @@ constexpr const char* helpStrings[] = {
     "]  shift fwd",
     "Sh] chan. fwd",
     "Sh[ chan. back",
+    "fn-k live drum",
     
     "^Global",
     "fn-; inc. BPM",
@@ -29,6 +30,7 @@ constexpr const char* helpStrings[] = {
     "fn-a Save as",
     "fn-o Open ",
     "fn-n New",
+    "fn-r Render->SD",
 
     "^Sequencer",
     "op-0-9 pattern ",

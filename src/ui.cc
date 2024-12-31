@@ -14,19 +14,26 @@
 
 #include <LittleFS.h>
 
+/* Render the whole pattern (or pattern sequence) to 
+the next available WAV file on the SD card */
 bool renderPattern(DrumMachine &dm)
 {
     String fname = findFreeRenderFilenameSD();
+    Serial.println("Rendering to " + fname);
+
+    // get just the substring after /
+    String justName = fname.substring(fname.lastIndexOf("/") + 1);
+    String msg = "->" + justName;
+
+    lowerMessage(dm, msg.c_str());
     bool success = renderToSD(dm, fname);
-    String msg;
+    
     if (!success)
     {
         msg = "Failed to render";
         lowerMessage(dm, msg.c_str());
         return false;
     }
-    msg = "Rendered to " + fname;
-    lowerMessage(dm, msg.c_str());
     updatePattern(dm);
     return true;
 }
@@ -200,15 +207,15 @@ void setKit(DrumMachine &dm, int kit)
         return;
     dm.kit = kit;
     // try loading a cached kit from the SD card
-    String kitName = basePathKits + "/" + "base-" + drumKits[dm.kit] + ".kit";
-    bool success = loadKitSD(dm, kitName);
+    String kitName = basePathKits + "/" + "base-" + kit + ".kit";
+    bool success = loadKitSD(kitName, dm);
     if (!success)
     {
         // if we failed to load the kit, create the samples
         createSamples(dm, drumKits[dm.kit]);
         // try to write the kit as a cache
         // (do nothing if it fails; we can always regenerate)
-        saveKitSD(dm, kitName);
+       writeKitSD(kitName, dm);
     }    
     requestMix(dm);    
 }

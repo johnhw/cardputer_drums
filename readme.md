@@ -66,6 +66,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `fn+a` Save the file, giving a filename. ENTER to load
 * `fn+o` Open a file; type to filter, up/down to select, ENTER to load
 * `fn+n` New file, reset everything (requires a y/n confirmation)
+* `fn+r` Render the current pattern to a WAV file on the SD card. The file will be named `/bonnethead/renders/render-<n>.wav`
 
 ### Sequencer
 
@@ -77,6 +78,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `opt+DEL` delete pattern at cursor
 
 ### channel
+* `fn+k` enter keydrumming mode. Press keys to play the drum sounds. Press `fn+k` to exit keydrumming mode. (note: red circle at bottom indicates live keydrumming mode). Shift-K enables step-quantized keydrumming mode.
 * `fn+<n>` toggle mute channel `n`
 * `fn+shift+<n>` toggle solo channel `n` (multiple channels can be solo'd)
 * `fn+enter` toggle solo the current channel (where the cursor is)

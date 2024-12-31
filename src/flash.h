@@ -14,7 +14,7 @@ bool initLittleFS();
 std::vector<String> filterByPrefix(const std::vector<String> &input, const String &prefix);
 bool initSD();
 bool createDirIfNotExistsSD(const String path);
-bool openWAVToSD(String fname, int16_t samplerate);
+bool openWAVToSD(String fname, int32_t samplerate);
 bool appendWAVToSD(String fname, int16_t* audioData, size_t length);
 bool backpatchWAVToSD(String fname);
 bool validateWavHeader(byte *buffer);

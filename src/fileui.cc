@@ -28,7 +28,6 @@ void updateFileText(DrumMachine &dm)
 
 void fileModeKeys(DrumMachine &dm)
 {
-
     if (M5Cardputer.Keyboard.isChange())
     {
         if (M5Cardputer.Keyboard.isPressed())
