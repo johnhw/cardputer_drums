@@ -22,5 +22,8 @@ void selectiveClearPattern(DrumMachine& dm);
 int32_t getKickDelay(DrumMachine& dm, int16_t step, int16_t chan);
 sample_t *getSample(DrumMachine& dm, int16_t sampleIndex);
 void getStep(DrumMachine& dm, int16_t step, int16_t chan, sample_t *&sample, int16_t &velocity);
+void getDetune(DrumMachine &dm, int16_t step, int16_t chan, int32_t &detune);
+void rotateChannelLeft(DrumMachine &dm);
+void rotateChannelRight(DrumMachine &dm);
 
 #endif

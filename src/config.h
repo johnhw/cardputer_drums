@@ -5,13 +5,14 @@
 static constexpr const int32_t samplerate = 16000;
 static constexpr const int16_t nSteps = 16;
 static constexpr const int16_t nChans = 8;
-static constexpr const int16_t maxPatterns = 20;
+static constexpr const int16_t maxPatterns = 36;
 static constexpr const int16_t kickSubdiv = 12; // subdivisions per unit time
 static constexpr const int16_t minBPM = 60;     // minimum bpm
 static constexpr const int16_t cursorFlashTime = 200;
-static constexpr const int16_t maxPatternSequence = 32;
+static constexpr const int16_t maxPatternSequence = 36;
 static constexpr const int16_t maxFilterCutoff = 16; // number of steps in the filter cutoff
 static constexpr const int16_t maxChannelVolume = 16; // number of steps in the channel volume setting
+static constexpr const float maxSampleLen = 0.33; 
 const String VERSION = "1.0.2";
 const String basePathPattern = "/bonnethead/patterns"; // paths in the filesystem to save/load from
 const String basePathKits = "/bonnethead/kits"; 

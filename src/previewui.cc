@@ -38,9 +38,65 @@ void previewModeUpdate(DrumMachine &dm)
           if (isalpha(status.word[0]))
             previewSample(dm, status.word[0]);
         }
+
+         if(M5Cardputer.Keyboard.isKeyPressed(' '))
+        {
+          resetDetuneSample(dm, dm.previewData.lastSample);
+        }
+        
+        // detune adjust
+        if(M5Cardputer.Keyboard.isKeyPressed(';'))
+        {
+          detuneSample(dm, dm.previewData.lastSample, 100);
+        }
+        if(M5Cardputer.Keyboard.isKeyPressed('.'))
+        {
+          detuneSample(dm, dm.previewData.lastSample, -100);
+        }        
+        if(M5Cardputer.Keyboard.isKeyPressed(','))
+        {
+          detuneSample(dm, dm.previewData.lastSample, 5);
+        }
+        if(M5Cardputer.Keyboard.isKeyPressed('/'))
+        {
+          detuneSample(dm, dm.previewData.lastSample, -5);
+        }
+        if(M5Cardputer.Keyboard.isKeyPressed('<'))
+        {
+          detuneSample(dm, dm.previewData.lastSample, 1);
+        }
+        if(M5Cardputer.Keyboard.isKeyPressed('?'))
+        {
+          detuneSample(dm, dm.previewData.lastSample, -1);
+        }
+
       }
     }
   }
+}
+
+void detuneSample(DrumMachine &dm, char sample, int32_t detune)
+{
+  sample_t *samplePtr;
+  samplePtr = getSample(dm, sample);
+  if (samplePtr)
+  {
+    samplePtr->detune += detune;
+    previewSample(dm, sample);
+  }
+
+}
+
+void resetDetuneSample(DrumMachine &dm, char sample)
+{
+  sample_t *samplePtr;
+  samplePtr = getSample(dm, sample);
+  if (samplePtr)
+  {
+    samplePtr->detune = 0;
+    previewSample(dm, sample);
+  } 
+  
 }
 
 void previewSample(DrumMachine &dm, char sample)
@@ -49,8 +105,18 @@ void previewSample(DrumMachine &dm, char sample)
   sample_t *samplePtr;
   M5Cardputer.Display.clearDisplay(TFT_DARKGREY);
   preview[0] = sample;
-  M5Cardputer.Display.drawString(preview, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2);
+  dm.previewData.lastSample = sample;
+  M5Cardputer.Display.setFont(&fonts::FreeMonoBold24pt7b);
+  M5Cardputer.Display.drawString(preview, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2-50);
+
+  // show the detune
+  String detuneMsg = "Det: " + String(getSample(dm, sample)->detune);  
+  M5Cardputer.Display.setFont(&fonts::FreeMonoBold12pt7b);
+  M5Cardputer.Display.drawString(detuneMsg, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2);
+  
+  
+
   samplePtr = getSample(dm, sample);
   if (samplePtr)
-    M5Cardputer.Speaker.playRaw(samplePtr->samples, samplePtr->len, samplerate, false, 1, 0);
+    previewSample(dm, samplePtr);
 }

@@ -1,10 +1,12 @@
 #include <M5Cardputer.h>
+#include "audio.h"
 #include "utils.h"
 #include "datatypes.h"
 #include "config.h"
 #include "synth.h"
 #include "pattern.h"
 #include "ui.h"
+#include "flash.h"
 
 // threshold is 0.0 to 1.0. all other values in samples
 int32_t findSampleEnd(int16_t *sample, int32_t len, int32_t win, double threshold)
@@ -29,10 +31,28 @@ int32_t findSampleEnd(int16_t *sample, int32_t len, int32_t win, double threshol
 
 void allocSample(DrumMachine &dm, int8_t index, int32_t len)
 {
+    Serial.printf("Allocating sample %d, len %d\n", index, len);
+    Serial.println("Free heap: " + String(ESP.getFreeHeap()));
+    
+    freeSample(dm, index);
+    if(ESP.getFreeHeap() < len * sizeof(int16_t) + 4096)
+    {
+        Serial.println("Out of memory");
+        dm.drumSamples[index].samples = nullptr;
+        dm.drumSamples[index].len = 0;
+        return;
+    }
     dm.drumSamples[index].samples = (int16_t *)allocBuffer(dm.drumSamples[index].samples, len, sizeof(int16_t));
+    if(dm.drumSamples[index].samples == nullptr)
+    {
+        Serial.println("Failed to allocate buffer");
+        dm.drumSamples[index].len = 0;
+        return;
+    }
     dm.drumSamples[index].len = len;
-    dm.drumSamples[index].freqIncrement = 32768; // for fixed point frequency shifting
+    dm.drumSamples[index].detune = 0; 
 }
+
 
 void freeSample(DrumMachine &dm, int8_t index)
 {
@@ -40,7 +60,10 @@ void freeSample(DrumMachine &dm, int8_t index)
     {
         free(dm.drumSamples[index].samples);
         dm.drumSamples[index].samples = nullptr;
+        dm.drumSamples[index].len = 0;
     }
+    dm.drumSamples[index].samples = nullptr;
+    dm.drumSamples[index].len = 0;
 }
 
 void allocateMix(DrumMachine &dm)
@@ -53,6 +76,9 @@ void allocateMix(DrumMachine &dm)
     {
         dm.audioBuffers[i] = (int16_t *)allocBuffer(dm.audioBuffers[i], bufSamples, sizeof(int16_t));
     }
+    dm.scratchBuffer = dm.audioBuffers[0];
+    dm.bufferA = dm.audioBuffers[0];
+    dm.bufferB = dm.audioBuffers[1];
     dm.waveBufferIndex = 0;
 }
 
@@ -60,12 +86,13 @@ void allocateMix(DrumMachine &dm)
 // then copy in the data from the scratch buffer
 void autoSample(DrumMachine &dm, int drumIndex)
 {
+    int32_t maxSamples = samplerate * maxSampleLen;
     // use audiobuffers as a scratch space
     int32_t len = findSampleEnd(dm.audioBuffers[0], dm.waveBufferLen, 100, 0.03);
-    freeSample(dm, drumIndex);
-    allocSample(dm, drumIndex, len);
-    memcpy(dm.drumSamples[drumIndex].samples, dm.audioBuffers[0], len * sizeof(int16_t));
-    memset(dm.audioBuffers[0], 0, dm.waveBufferLen * sizeof(int16_t));
+    len = min(len, maxSamples);        
+    allocSample(dm, drumIndex, len);    
+    memcpy(dm.drumSamples[drumIndex].samples, dm.audioBuffers[0], dm.drumSamples[drumIndex].len * sizeof(int16_t));    
+    memset(dm.audioBuffers[0], 0, dm.waveBufferLen * sizeof(int16_t));    
     return;
 }
 
@@ -73,19 +100,14 @@ void makeSynth(DrumMachine &dm, int index, synth_t *synth)
 {
     sample_t scratchSample;
     scratchSample.samples = dm.audioBuffers[0];
-    scratchSample.len = dm.waveBufferLen;
-    createSynth(&scratchSample, samplerate, synth);
+    scratchSample.len = dm.waveBufferLen - 1;    
+    createSynth(&scratchSample, samplerate, synth);    
     autoSample(dm, index);
+
 }
 
 void createSamples(DrumMachine &dm, kit_t &kit)
 {
-
-    // initialise with dummy samples
-    for (int i = 0; i < 26; i++)
-    {
-        allocSample(dm, i, 1);
-    }
 
     // 8 semitones from middle-c
     int16_t noteFreqs[] = {261, 294, 330, 350, 392, 440, 493, 523};
@@ -96,7 +118,7 @@ void createSamples(DrumMachine &dm, kit_t &kit)
 
     // kit element 0 is the bass and repeated 8 times, for slots 1-9
     for (int i = 1; i < 9; i++)
-    {
+    {        
         bass.startFreq = noteFreqs[i - 1] * 0.25;
         makeSynth(dm, i, &bass);
     }
@@ -104,14 +126,54 @@ void createSamples(DrumMachine &dm, kit_t &kit)
     // the remaining 17 are the drum kit
     for (int i = 9; i < 26; i++)
     {
-        bass = kit.synths[i - 8];
+        bass = kit.synths[i - 8];        
         makeSynth(dm, i, &bass);
     }
+    
 }
 
 float fast_tanh(float x)
 {
     return 32767.0 * tanh(x / 32767.0);
+}
+
+// convert a detune in cents to a frequency increment
+// where 32768.0 is a frequency of 1.0, 16384.0 is a frequency of 0.5, etc.
+int32_t freqIncrement(int32_t totalDetune)
+{
+    float freq = powf(2.0, totalDetune / 1200.0);
+    return freq * 32768.0;
+}
+
+// preview a sample by writing it into audioBuffer[0]
+// using the freqIncrement etc. for detune
+void previewSample(DrumMachine &dm, sample_t *preview)
+{
+    int32_t totalDetune = preview->detune;
+    int32_t freqInc = freqIncrement(totalDetune);
+    int32_t sampleIndex = 0;
+    int32_t fractionalSampleIndex = 0;
+    int32_t len = preview->len;
+    int32_t out;
+    float gain = 1.0;
+    for (int i = 0; i < dm.waveBufferLen; i++)
+    {
+        if (sampleIndex >= len)
+        {
+            dm.audioBuffers[0][i] = 0;
+            break;
+        }
+        float in = preview->samples[sampleIndex] * gain;
+        fractionalSampleIndex += freqInc;
+        sampleIndex = fractionalSampleIndex / 32768;
+        out = in;
+        if (out > 32767)
+            out = 32767;
+        if (out < -32767)
+            out = -32767;
+        dm.audioBuffers[0][i] = out;
+    }
+    M5Cardputer.Speaker.playRaw(dm.audioBuffers[0], len, samplerate, false, 1, 0);
 }
 
 void mix(DrumMachine &dm)
@@ -124,6 +186,7 @@ void mix(DrumMachine &dm)
     int32_t bufferIndex;
     int16_t *buffer;
     int16_t newIndex;
+    int32_t totalDetune;
 
     // reset the mix data
     for (chan = 0; chan < nChans; chan++)
@@ -171,10 +234,15 @@ void mix(DrumMachine &dm)
                     // returns NULL if there's no sample there at all
                     mixData[chan].stepIndex = mixData[chan].nextIndex;
                     getStep(dm, mixData[chan].stepIndex, chan, newSample, mixData[chan].currentVelocity);
+                    getDetune(dm, mixData[chan].stepIndex, chan, mixData[chan].totalDetune);
                     if (newSample != nullptr) // cutoff if there's a new sample to start (do nothing otherwise)
                     {
                         mixData[chan].sampleIndex = 0;
+                        mixData[chan].fractionalSampleIndex = 0;
                         mixData[chan].currentSample = newSample;
+                        // add cumulative detune from the sample itself, and the channel tuning
+                        mixData[chan].totalDetune += newSample->detune + dm.channels[chan].detune;
+                        mixData[chan].freqIncrement = freqIncrement(mixData[chan].totalDetune); // compute the actual step increment
                     }
                 }
                 mixData[chan].kickDelay--;
@@ -183,8 +251,10 @@ void mix(DrumMachine &dm)
                 if (mixData[chan].currentSample && mixData[chan].currentSample->len != 0)
                 {
                     // float in = fast_tanh(mixData[chan].currentSample->samples[mixData[chan].sampleIndex++] * mixData[chan].gain);
-                    float in = mixData[chan].currentSample->samples[mixData[chan].sampleIndex++] * mixData[chan].gain;
-
+                    float in = mixData[chan].currentSample->samples[mixData[chan].sampleIndex] * mixData[chan].gain;
+                    
+                    mixData[chan].fractionalSampleIndex += mixData[chan].freqIncrement;
+                    mixData[chan].sampleIndex = mixData[chan].fractionalSampleIndex / 32768;
                     mixData[chan].currentFilter = mixData[chan].filterAlpha * mixData[chan].currentFilter + (1.0f - mixData[chan].filterAlpha) * in;
                     out += mixData[chan].currentVelocity * mixData[chan].currentFilter;
 
@@ -208,7 +278,7 @@ void mix(DrumMachine &dm)
     }
 }
 
-#include "flash.h"
+
 
 /* Advance to the next pattern in the sequence *without* updating the display */
 void noUINextPattern(DrumMachine &dm)

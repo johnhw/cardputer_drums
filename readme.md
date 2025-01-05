@@ -21,6 +21,7 @@ This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stac
 * Live keydrumming mode
 * Render to SD card
 * Sampled drum kits
+* Tap tempo
 
 ## UI
 The dot grid indicates the 16x8 steps for the current pattern. 
@@ -47,6 +48,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `[` "kick left" shift step timing back by 1/12 step
 * `]` "kick right" shift step timing forward by 1/12 step
 
+* ` ` (space) tap tempo. Press four times to set the tempo.
 
 * `fn+↑` increase BPM
 * `fn+↓` decrease BPM
@@ -57,20 +59,20 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `fn+[` decrease volume
 * `fn+]` increase volume
 
-
 * `Button A` enter instant preview mode -- press a key to hear the sample preview. `Button A` switches back to pattern mode.
 
 ### Files
 
-* `fn+s` Save the current pattern (to the scratch buffer if you haven't saved as yet)
-* `fn+a` Save the file, giving a filename. ENTER to load
-* `fn+o` Open a file; type to filter, up/down to select, ENTER to load
-* `fn+n` New file, reset everything (requires a y/n confirmation)
+* `fn+s` Save the current pattern in the working buffer (automatically reloaded on startup) 
+* `fn+a <x>` Save the file as bank <x> (0-9a-z)
+* `fn+o <x>` Open a file; where <x> is the bank (0-9a-z)
+* `fn+n` New file, reset everything 
 * `fn+r` Render the current pattern to a WAV file on the SD card. The file will be named `/bonnethead/renders/render-<n>.wav`
 
 ### Sequencer
 
-* `opt+<n>` where `n` is 0-9 selects pattern `n`
+* `opt+<x>` where `n` is 0-9 selects pattern `n`
+* `opt+shift+<x>` fill pattern `n` after this pattern, then resume 
 * `opt+ESC` toggle pattern sequence mode
 * `opt+←` pattern cursor left
 * `opt+→` pattern cursor right
@@ -86,11 +88,13 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `fn+=` increase filter cutoff on active channels
 * `fn+\` decrease channel volume on active channels
 * `fn+'` inccrease channel volume on active channels
+* `fn+shift+←` rotate pattern left
+* `fn+shift+→` rotate pattern right
 
 
 ### Kits
-* `alt+<n>` select drum kit `n` (note: this will cause a delay as the kit is synthesised)
-
+* `alt+<x>` select drum kit `x` (note: this will cause a delay as the kit is synthesised/loaded)
+    * Only kits 1-4 are available w/o an SD card.
 
 ### clipboard
 * `fn+d` delete current pattern

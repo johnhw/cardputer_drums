@@ -22,17 +22,21 @@
 
 // TODO:
 
-
 // fix pattern sequence mode one pattern lags
-// file UI: filtered file list, pattern cursor
-// fix load kit 00 / kits don't sound the same on reload
-// kit editor
-// chords in kits
+// banks for pattern, kit load/save
+// add filter cutoff to preview UI/editor
 // Loop samples
-// Sample tuning
+// flams: double flam, triple flam, roll, reverse
+// UI for step and channel tuning; save/load detunes in patterns, channels and in kits (somehow?)
 
 
 // maybe:
+// chords in kits
+// kit editor
+// basic undo
+// beat slicer
+// polyrhytm patterns (different channel lengths)
+// probability
 // headphone USB-C audio
 
 
@@ -75,12 +79,6 @@ void initCardputer()
 void splash()
 {
 
-  //M5Cardputer.Display.drawPng(splashPNG, sizeof(splashPNG)/sizeof(splashPNG[0]), 0, 0);
-
-  //LGFX_Sprite splashSprite = LGFX_Sprite(&M5.Lcd);
-  // LGFX_Sprite splashSprite = LGFX_Sprite(&M5Cardputer.Display);
-  // splashSprite.setColorDepth(16);
-  // splashSprite.createSprite(M5Cardputer.Display.width(), M5Cardputer.Display.height());
 
   auto splashSprite = M5Cardputer.Display; 
   splashSprite.clearDisplay(TFT_DARKGREY); 
@@ -107,29 +105,34 @@ void splash()
   splashSprite.setTextColor(TFT_GREEN);
   splashSprite.drawString("Williamson Industries", M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 + 50);
   
-  //splashSprite.pushSprite(0, 0);
-
 
 }
 
 void setup(void)
 {  
   initCardputer();
+  initState(machine);
   splash();    
-  machine.kit = -1; // set to -1 so we always set the kit  
-  machine.splashFlag = true;
+  
   resetState(machine);
   String fname = "startup";
-  loadDrumMachine(machine, fname);
+  bool success = loadDrumMachine(machine, fname);  
+  if(!success)
+  {
+    machine.kit = -1;
+    resetState(machine);
+  }
+
   if(machine.kit==-1)
-    setKit(machine, 0); // set the default kit if one didn't get loaded
+    setKit(machine, 1); // set the default kit if one didn't get loaded.
+  // clear the splash and redraw
+  machine.splashFlag = false;
+  updatePattern(machine);
 }
 
 void loop(void)
 {
   M5Cardputer.update();
-
   updateUI(machine);
-  
   delay(1);
 }

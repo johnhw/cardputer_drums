@@ -20,7 +20,7 @@ bool backpatchWAVToSD(String fname);
 bool validateWavHeader(byte *buffer);
 String findFreeRenderFilenameSD();
 bool writeWavSD(String fname, int32_t samplerate, int16_t *samples, int32_t len);
-bool writeKitSD(const String &path, DrumMachine &dm);
+bool saveKitSD(const String &path, DrumMachine &dm);
 bool loadKitSD(const String &path, DrumMachine &dm);
 
 #endif 

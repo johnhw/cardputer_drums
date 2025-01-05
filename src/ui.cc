@@ -110,6 +110,7 @@ bool loadDrumMachine(DrumMachine &dm, String &fname)
     if (!success)
     {
         Serial.println("Failed to deserialize");
+        
         return false;
     }
 
@@ -134,9 +135,12 @@ void initState(DrumMachine &dm)
 {
     // Allocate mix buffers
     allocateMix(dm);
+    // print free heap space    
+    
     dm.kit = -1;          // set to -1 so we always set the kit
                           // Create the drum samples
     dm.nKits = nDrumKits; // initialize the number of kits (defined in kits.h)
+    dm.splashFlag = true;
 }
 
 // reset the state
@@ -158,7 +162,6 @@ void resetState(DrumMachine &dm)
     dm.liveMode = 0;
     dm.liveVelocity = 0;
     dm.playStep = 0.0;
-
     dm.fileName = "";
 
     strcpy(dm.patternSequence, ""); // reset the pattern sequence
@@ -180,7 +183,7 @@ void resetState(DrumMachine &dm)
     recalcBPM(dm);
     recalcChannels(dm);
 
-    initState(dm);
+    
     // Clear all patterns
     for (int i = 0; i < maxPatterns; i++)
     {
@@ -194,7 +197,7 @@ void resetState(DrumMachine &dm)
 
     // Draw the initial cursor position
     drawCursor(dm, 1);
-
+    
     // Update the pattern
     updatePattern(dm);
 }
@@ -203,21 +206,33 @@ void resetState(DrumMachine &dm)
 // resynthetizes all samples
 void setKit(DrumMachine &dm, int kit)
 {
-    if (kit < 0 || kit >= dm.nKits || dm.kit == kit)
+    if (kit < 0)
         return;
+    int oldKit = dm.kit;
     dm.kit = kit;
-    // try loading a cached kit from the SD card
-    String kitName = basePathKits + "/" + "base-" + kit + ".kit";
-    bool success = loadKitSD(kitName, dm);
-    if (!success)
+    // is this a base kit? resynth the samples
+    if(dm.kit < nDrumKits)
     {
-        // if we failed to load the kit, create the samples
         createSamples(dm, drumKits[dm.kit]);
-        // try to write the kit as a cache
-        // (do nothing if it fails; we can always regenerate)
-       writeKitSD(kitName, dm);
-    }    
-    requestMix(dm);    
+        requestMix(dm);
+        return;
+    }
+
+    // try loading a cached kit from the SD card
+    String kitName = basePathKits + "/" + "base-" + (kit+1) + ".kit";
+    
+    bool success = loadKitSD(kitName, dm);
+    if(!success)
+    {
+        if(dm.kit != oldKit)
+        {
+            setKit(dm, oldKit);
+        }
+    }
+    else
+    {
+        requestMix(dm);
+    }
 }
 
 void updateMix(DrumMachine &dm, int16_t step, int16_t chan)
@@ -235,6 +250,7 @@ void requestMix(DrumMachine &dm)
 // in patternMode=0 do nothing;
 // in patternMode=1 advance to next pattern in sequence
 // wrapping around to the start if necessary
+// if fill is set, jump to the fill, then return to the sequence
 void nextPattern(DrumMachine &dm)
 {
     int pattern;
@@ -256,6 +272,18 @@ void nextPattern(DrumMachine &dm)
         drawTopLine(dm);
     }
 
+    if(dm.fillPattern>0)
+    {
+        // positive, switch to the fill pattern
+        dm.lastPattern = dm.pattern;
+        pattern = dm.fillPattern;
+        dm.fillPattern = -1;
+        setPattern(dm, pattern);
+        updatePattern(dm);
+        return;
+    }
+ 
+    
     // If we are in the sequence mode, and there is a sequence
     // then advance to the next pattern in the sequence
     if (dm.patternMode == 1 && strlen(dm.patternSequence) > 0)
@@ -273,7 +301,14 @@ void nextPattern(DrumMachine &dm)
     }
     else
     {
-        // do nothing
+        // restore where we were before the fill
+        if(dm.lastPattern>0)
+        {
+            pattern = dm.lastPattern;
+            dm.lastPattern = 0;
+            setPattern(dm, pattern);
+            updatePattern(dm);
+        }
     }
 }
 

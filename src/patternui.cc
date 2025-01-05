@@ -150,7 +150,7 @@ void updateCursor(DrumMachine &dm)
 void altKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
   int16_t digit = getDigitPressed(status) - 1;
-  if (digit >= 0 && digit < dm.nKits && digit != dm.kit)
+  if (digit >= 0)
   {
     M5Cardputer.Speaker.setVolume(0); // disable audio while changing kit
     // potentially show a "loading kit" status line here...
@@ -216,6 +216,44 @@ void recordLiveChar(DrumMachine &dm, char ch)
   dm.cursor.dirty = 1;  
 }
 
+void tapTempo(DrumMachine &dm)
+{
+  int i;
+  uint32_t maxTolerance = 200; 
+  uint32_t now = millis();
+  for(i=0;i<3;i++)
+  {
+    dm.tapBufferMillis[i] = dm.tapBufferMillis[i+1];
+  }
+  dm.tapBufferMillis[3] = now;
+  // now compute the average difference between each step
+  // if the difference exceeds the tolerance threshold, abort
+  float diff = 0.0f;
+  for(i=0;i<3;i++)
+  {
+    int32_t delta = dm.tapBufferMillis[i+1] - dm.tapBufferMillis[i];
+    diff += (float)(delta);
+  }
+  diff /= 3.0f;
+
+  // verify that the difference is within the tolerance
+  for(i=0;i<3;i++)
+  {
+    float delta = dm.tapBufferMillis[i+1] - dm.tapBufferMillis[i];
+    if(fabs(delta - diff) > maxTolerance)
+    {
+      return;
+    }
+  }  
+  // now compute the BPM
+  float bpm = 60000.0f / diff;
+  int adj = (int)(bpm - dm.bpm);
+  String msg = "Tap BPM: " + ((int)bpm);
+  lowerMessage(dm, msg.c_str());
+  adjBpm(dm, adj);
+  
+}
+
 void patternModeKeys(DrumMachine &dm)
 {
 
@@ -268,6 +306,11 @@ void patternModeKeys(DrumMachine &dm)
             }
           }
 
+          // tap tempo
+          if(M5Cardputer.Keyboard.isKeyPressed(' '))
+          {
+            tapTempo(dm);
+          }
           // help screen
           if(M5Cardputer.Keyboard.isKeyPressed('`'))
           {
@@ -377,6 +420,16 @@ void patternKey(DrumMachine &dm, Keyboard_Class::KeysState status)
     else
       setPattern(dm, digit);
   }
+
+  // shift-press for fill
+  int8_t shiftDigit = getKeyIndex("!@#$%^&*");
+  if(shiftDigit>=0)
+  { 
+    
+    dm.fillPattern = shiftDigit + 1;
+    drawTopLine(dm);
+  }
+
 }
 
 void adjChanFilter(DrumMachine &dm, int adj)
@@ -432,6 +485,7 @@ void toggleLiveMode(DrumMachine &dm)
   drawStatus(dm);
 }
 
+
 void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
 
@@ -452,6 +506,19 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
     adjVolume(dm, 1);
   if (M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER))
     toggleSolo(dm, dm.cursor.chan);
+
+  // rotates
+  if(M5Cardputer.Keyboard.isKeyPressed('<'))
+    rotateChannelLeft(dm);
+  if(M5Cardputer.Keyboard.isKeyPressed('?'))
+    rotateChannelRight(dm);
+  
+  if (M5Cardputer.Keyboard.isKeyPressed('|'))
+    {
+      // force the drums to be regenerated on fn+shift+|
+      dm.forceResynth = true;
+      setKit(dm, dm.kit);
+    }
   
   if (M5Cardputer.Keyboard.isKeyPressed('k'))
   {
@@ -468,7 +535,10 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   if(M5Cardputer.Keyboard.isKeyPressed('n'))
     resetState(dm);
   if (M5Cardputer.Keyboard.isKeyPressed('s'))
+  {
+    lowerMessage(dm, ("Save -> " + fname).c_str());
     saveDrumMachine(dm, fname);
+  }
    if (M5Cardputer.Keyboard.isKeyPressed('r'))
     renderPattern(dm);
 
@@ -503,44 +573,11 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
       redrawPattern(dm);
   }
 
-  if(M5Cardputer.Keyboard.isKeyPressed('!'))
-  {
-    toggleSolo(dm, 0);
-    redrawPattern(dm);
-  }
-  if(M5Cardputer.Keyboard.isKeyPressed('@'))
-  {
-    toggleSolo(dm, 1);
-    redrawPattern(dm);
-  }
-  if(M5Cardputer.Keyboard.isKeyPressed('#'))
-  {
-    toggleSolo(dm, 2);
-    redrawPattern(dm);
-  }
-  if(M5Cardputer.Keyboard.isKeyPressed('$'))
-  {
-    toggleSolo(dm, 3);
-    redrawPattern(dm);
-  }
-  if(M5Cardputer.Keyboard.isKeyPressed('%'))  
-  {
-    toggleSolo(dm, 4);
-    redrawPattern(dm);
-  }
-  if(M5Cardputer.Keyboard.isKeyPressed('^'))  
-  {
-    toggleSolo(dm, 5);
-    redrawPattern(dm);
-  }
-  if(M5Cardputer.Keyboard.isKeyPressed('&'))
-  {
-    toggleSolo(dm, 6);
-    redrawPattern(dm);
-  }
-  if(M5Cardputer.Keyboard.isKeyPressed('*'))  
-  {
-    toggleSolo(dm, 7);
+  // solos with shift
+  int8_t shiftDigit = getKeyIndex("!@#$%^&*");
+  if(shiftDigit>=0)
+  { 
+    toggleSolo(dm, shiftDigit);
     redrawPattern(dm);
   }
 
@@ -623,9 +660,20 @@ void drawTopLine(DrumMachine &dm)
   M5Cardputer.Display.setTextColor(GREEN);
   // Clear the status bar area
   M5Cardputer.Display.fillRect(0, 0, M5Cardputer.Display.width(), topHeight, TFT_BLACK);
+  if(dm.lastPattern!=0) // if in a fill, draw in red
+    M5Cardputer.Display.setTextColor(RED);
   snprintf(statusLine, 255, "%c", patternNames[dm.pattern]);
   M5Cardputer.Display.drawString(statusLine, 10, 3);
 
+  // draw the fill pattern number if non-negative (in red)
+  if(dm.fillPattern>=0)
+  {
+    M5Cardputer.Display.setTextColor(RED);
+    snprintf(statusLine, 255, "%c", patternNames[dm.fillPattern]);
+    M5Cardputer.Display.drawString(statusLine, 20, 3);  
+  }
+
+  M5Cardputer.Display.setTextColor(GREEN);
   // Now show the pattern sequence
   // for each character in dm.patternSequence, draw it
   for (int i = 0; i < maxPatternSequence; i++)
@@ -648,6 +696,7 @@ void drawTopLine(DrumMachine &dm)
       M5Cardputer.Display.drawString("_", 40 + i * 10, 3);
     }
   }
+
   M5Cardputer.Display.setTextColor(WHITE);
   M5Cardputer.Display.setFont(&fonts::Font2);
 }
@@ -671,6 +720,26 @@ void renderBeatLine(DrumMachine &dm)
 
   if (step != dm.beatTime)
   {
+    // draw the dancing man
+    String man;
+    M5Cardputer.Display.fillRect(100, 3, 200, 10, TFT_BLACK); // clear the area
+    M5Cardputer.Display.setFont(&fonts::Font0);
+    M5Cardputer.Display.setTextColor(GREEN);
+    if(step%4==3)  
+      man = "- / ._. \\ -";
+    else 
+      man = "\\ ( -_- ) /";
+    M5Cardputer.Display.drawString(man.c_str(), 150, 3);
+        
+    if(step==15)
+      M5Cardputer.Display.drawString("  ( ^_^ )  ", 150, 3);
+    //else
+    //      M5Cardputer.Display.drawString("  ( ^_^ )  ", 150, 3);
+    // restore font
+    M5Cardputer.Display.setTextColor(WHITE);
+    M5Cardputer.Display.setFont(&fonts::Font2);
+
+    // now draw the beat line
     getCursorPixelPos(dm, dm.beatTime, 0, x, y);
     // Clear the old beat line
     M5Cardputer.Display.fillRect(x, y - 1, dm.cursor.width, 2, TFT_BLACK);
@@ -678,7 +747,11 @@ void renderBeatLine(DrumMachine &dm)
     getCursorPixelPos(dm, step, 0, x, y);
     M5Cardputer.Display.fillRect(x, y - 1, dm.cursor.width, 2, beatColor);
     dm.beatTime = step;
+
+    
   }
+
+  
 }
 
 void lowerMessage(DrumMachine &dm, const char *message)
@@ -715,7 +788,7 @@ void drawStatus(DrumMachine &dm)
   M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_BLACK);
 
   // Create the status line with BPM, Swing, Pattern, and Kit information
-  snprintf(statusLine, 255, "BPM %03d VOL %02d SW %02d KT %02d", dm.bpm, dm.volume, dm.swing, dm.kit);
+  snprintf(statusLine, 255, "BPM %03d VOL %02d SW %02d KT %02d", dm.bpm, dm.volume, dm.swing, dm.kit+1);
   M5Cardputer.Display.drawString(statusLine, 10, M5Cardputer.Display.height() - statusHeight);
 
   // Recalculate channels to determine if any are soloed

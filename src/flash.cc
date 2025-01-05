@@ -209,16 +209,16 @@ bool validateWavHeader(byte *buffer)
 
 /* Write out each drum sample to a file on the SD card
    named a.wav, b.wav, ..., z.wav */
-bool writeKitSD(const String &path, DrumMachine &dm)
+bool saveKitSD(const String &path, DrumMachine &dm)
 {
-    Serial.println("Writing kit: " + path);
+    
     createDirIfNotExistsSD(path);
-    // iterate over a.wav through z.wav
+    // iterate over a.wav through y.wav
     for (int i = 0; i < 26; i++)
     {
-        String fname = String((char)('a' + i)) + ".wav";
+        String fname = String((char)('a' + i - 1)) + ".wav";
         String fullPath = path + "/" + fname;
-        Serial.println("Writing kit sample: " + fullPath);
+        int j = i + 1;
         bool success = writeWavSD(fullPath, samplerate, dm.drumSamples[i].samples, dm.drumSamples[i].len);
 
         if (!success)
@@ -242,16 +242,17 @@ bool loadKitSD(const String &path, DrumMachine &dm)
 {
     int oldKit = dm.kit;
     bool foundSamples = false;
-    // iterate over a.wav through z.wav
+    // iterate over a.wav through y.wav
     for (int i = 0; i < 26; i++)
     {
-        String fname = String((char)('a' + i)) + ".wav";
+        
+        String fname = String((char)('a' + i - 1)) + ".wav";
         String fullPath = path + "/" + fname;
 
         File file = SD.open(fullPath, FILE_READ);
-        // clear existing sample
-        memset(dm.drumSamples[i].samples, 0, dm.drumSamples[i].len);
-        dm.drumSamples[i].len = 0;                
+                   
+        // clear the sample
+        freeSample(dm, i);
 
         // skip missing files
         if (!file)

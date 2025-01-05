@@ -72,7 +72,7 @@ constexpr synth_t teekDrum = {
 
 constexpr synth_t openHat = {                
     .ampAttack = 0,
-    .ampDecay = 300,
+    .ampDecay = 100,
     .noise=1.0,
     .overdrive = 0.1
 };
@@ -84,7 +84,7 @@ constexpr synth_t clapDrum = {
     .ampDecay = 9,
     .noise = 1,
     .overdrive = 0.9,
-    .retriggers = 4,
+    .retriggers = 2,
     // multi-trigger
     .retriggersDelay = 27,
     .retriggerRandomDelay = 8,
@@ -124,7 +124,7 @@ constexpr synth_t closedCowbell = {
 constexpr synth_t crash = {
     .startFreq=500,
     .ampAttack=2,
-    .ampDecay=110,
+    .ampDecay=70,
     .noise=0.1,
     .modRatio=6.321,
     .modStart = 5000.0,        
