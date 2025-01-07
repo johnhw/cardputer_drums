@@ -4,6 +4,7 @@
 #include <SD.h>
 #include <SPI.h>
 #include "audio.h"
+#include <M5GFX.h>
 
 #define FORMAT_SPIFFS_IF_FAILED true
 
@@ -107,6 +108,19 @@ std::vector<String> listFiles(const String &path)
         fileList.push_back(String(file.name()));
         file = root.openNextFile();
     }
+}
+
+
+/* Load a font from SPIFFS and add it to the display */
+bool loadFont(M5GFX display, const String &path)
+{    
+    if (!display.loadFont(LittleFS, path.c_str()))
+    {
+        Serial.println("Failed to load font " + path);
+        return false;
+    }
+    return true;
+
 }
 
 // select strings with a given prefix
@@ -234,6 +248,8 @@ bool saveKitSD(const String &path, DrumMachine &dm)
     Serial.println("Wrote kit");
     return true;
 }
+
+
 
 /* Replace all samples in a drum machine with loaded
 files from an SD card, assuming the files are named

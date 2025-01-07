@@ -15,12 +15,28 @@ typedef struct channel_t
   int32_t detune; // detune in cents
 } channel_t;
 
+typedef struct sample_adjustment_t
+{
+  int32_t detune = 0; // detune in cents
+  int32_t cutoff = 0; 
+  int32_t volume = 0; // signed, each step is 3dB
+  int32_t trimStart = 0; // start of the sample (negative = delay)
+  int32_t trimEnd = 0; // offset from end of the sample (always positive)
+  int32_t loopStart = 0; // start of the loop 
+  int32_t loopEnd = 0; // end of the loop (if start==end, no loop)
+  // envelope (TODO)
+  int32_t attackTime = 0; // attack time in ms
+  int32_t decayTime = 0; // decay time in ms
+  int32_t sustainLevel = 0; // sustain level in dB
+  int32_t releaseTime = 0; // release time in ms
+} sample_adjustment_t;
+
 // a sample, with PCM data, length and a frequency
 typedef struct sample_t
 {
   int16_t *samples = 0;
-  int32_t len = 0;
-  int32_t detune = 0; // detune in cents
+  int32_t len = 0;    
+  sample_adjustment_t adjustments;
 } sample_t;
 
 enum FX {
@@ -58,7 +74,7 @@ typedef struct cursor_t
 // data for mixing one channel into the final mix
 typedef struct mixData_t
 {
-  sample_t *currentSample;
+  sample_t *currentSample;  
   int32_t sampleIndex;
   int32_t fractionalSampleIndex;
   int16_t stepIndex;
@@ -76,15 +92,18 @@ typedef struct previewData_t
 {
   char lastSample = 0;
   int32_t lastDetune = 0;
+  int16_t currentParam = 0; // current parameter being edited in preview mode
+  bool previewDirty = true;
 } previewData_t;
 
 struct DrumMachine {
-    sample_t drumSamples[27];    
-    int16_t* audioBuffers[4] = {nullptr, nullptr, nullptr, nullptr}; // 4 buffers
+    sample_t drumSamples[27];        
+    int16_t* audioBuffers[N_BUFFERS]; // double buffering
     int16_t *scratchBuffer; // points to audioBuffers[0]
-    int16_t *bufferA; // ping-pong buffers
-    int16_t *bufferB;
-    int8_t waveBufferIndex = 0;
+    int16_t *bufferA, *bufferB; // the two buffers
+    
+    int32_t mixIndex = 0; // current index inside the pattern (in samples)
+    int8_t waveBufferIndex = 0; // current buffer count (4 buffers per bar)
     int32_t patternSamples; // number of samples in a whole pattern
     int16_t waveBufferLen;  // samples in one buffer (1/4 pattern)
     int8_t playMode = 0;    // 0=normal; 1=sample preview
@@ -112,11 +131,12 @@ struct DrumMachine {
     int8_t fillPattern = -1; // the pattern to fill at the end of this pattern. If non-zero, play that pattern before loop/advance
     int8_t lastPattern = 0; // pattern we were in before the fill
     int16_t nKits; // number of kits available (set at start)
+    
 
     bool forceResynth; // if true, force the samples to be regenerated and not loaded from SD
     int8_t splashFlag; // are we currently showing the splash screen?
     int16_t lastMode; // last mode we were in (so we can return to it)
-    int16_t nextAction; // next action to take (e.g. save, load, etc)
+    int16_t bankAction; // next bank-select action to take (e.g. save, load, etc)
     String fileName; // the current file/bank name for the pattern
     cursor_t cursor;
     channel_t channels[nChans];
@@ -124,6 +144,7 @@ struct DrumMachine {
     chanData_t allPatterns[nSteps * nChans * maxPatterns];
     chanData_t clipboard[nSteps * nChans];
     previewData_t previewData;
+    mixData_t mixData[nChans];
 };
 
 

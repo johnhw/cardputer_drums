@@ -22,12 +22,18 @@
 
 // TODO:
 
-// fix pattern sequence mode one pattern lags
-// banks for pattern, kit load/save
-// add filter cutoff to preview UI/editor
-// Loop samples
+// live recording
+// CHESNEY HAWKES MODE
+// Custom font (maybe impossible?)
+// waveform render for samples in preview mode and slicer
+// fix pattern switch visual sync (off by 1/2 bar)
+// arena mode for sample allocation
+// banks for pattern, kit save
+// add filter cutoff to preview UI/editor / trim / waveform display
+// Loop samples / trim samples
 // flams: double flam, triple flam, roll, reverse
-// UI for step and channel tuning; save/load detunes in patterns, channels and in kits (somehow?)
+// UI for step and channel tuning; 
+// save/load sample adjustments in patterns, channels (twice; in patterns and in kits)
 
 
 // maybe:
@@ -72,8 +78,10 @@ void initCardputer()
   M5Cardputer.Display.startWrite();
   M5Cardputer.Display.setRotation(1);
   M5Cardputer.Speaker.setVolume(255);
-  M5Cardputer.Speaker.begin();
+  M5Cardputer.Speaker.begin();  
+
   initFS();
+
 }
 
 void splash()
@@ -91,26 +99,25 @@ void splash()
   splashSprite.setTextColor(TFT_LIGHTGREY);
   splashSprite.drawString("BonnetHead", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 - 50);
 
-  
+  loadFont(splashSprite, "/routed_7.vlw");
   splashSprite.setFont(&fonts::Font0);
   splashSprite.setTextColor(TFT_BLACK);
   splashSprite.drawString(VERSION, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 - 20 );
 
   // draw a rectangle for the lower text
-  splashSprite.fillRect(0, M5Cardputer.Display.height() / 2 + 45, M5Cardputer.Display.width(), 55, RGB565(5,5,5));
-  // draw text in small font below
-  splashSprite.setFont(&fonts::Font0);
-  splashSprite.setTextColor(TFT_BLACK);
-  splashSprite.drawString("Williamson Industries", M5Cardputer.Display.width() / 2 + 1, M5Cardputer.Display.height() / 2 + 50 + 1);
-  splashSprite.setTextColor(TFT_GREEN);
-  splashSprite.drawString("Williamson Industries", M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 + 50);
+  splashSprite.fillRect(0, M5Cardputer.Display.height() / 2 + 45, M5Cardputer.Display.width(), 55, RGB565(0,0,0));
+  // draw text in small font below  
+  splashSprite.setTextColor(TFT_WHITE);
+  splashSprite.drawString("W I L L I A M S O N  I N D U S T R I E S", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 + 50 );
   
 
 }
 
 void setup(void)
 {  
+  allocArena(&machine.arena, SAMPLE_ARENA_SIZE);
   initCardputer();
+  Serial.println("\n\n\nBonnetHead "+VERSION+"\n\n\n");
   initState(machine);
   splash();    
   
@@ -127,6 +134,7 @@ void setup(void)
     setKit(machine, 1); // set the default kit if one didn't get loaded.
   // clear the splash and redraw
   machine.splashFlag = false;
+  resetMix(machine);
   updatePattern(machine);
 }
 

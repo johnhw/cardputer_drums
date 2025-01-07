@@ -12,13 +12,16 @@ static constexpr const int16_t cursorFlashTime = 200;
 static constexpr const int16_t maxPatternSequence = 36;
 static constexpr const int16_t maxFilterCutoff = 16; // number of steps in the filter cutoff
 static constexpr const int16_t maxChannelVolume = 16; // number of steps in the channel volume setting
-static constexpr const float maxSampleLen = 0.33; 
+static constexpr const float maxSampleLen = 0.5; 
+static constexpr const int32_t SAMPLE_ARENA_SIZE = 160000;
 const String VERSION = "1.0.2";
 const String basePathPattern = "/bonnethead/patterns"; // paths in the filesystem to save/load from
 const String basePathKits = "/bonnethead/kits"; 
 const String basePathSamples =  "/bonnethead/samples"; 
 const String basePathRender = "/bonnethead/render";
 const String basePathRoot = "/bonnethead"; 
+
+#define N_BUFFERS 2
 
 // pattern mode
 #define PLAY_MODE_PATTERN 0 
@@ -34,4 +37,18 @@ const String basePathRoot = "/bonnethead";
 #define ACTION_NEW 3
 
 
+const String ASCIIDance[] = {
+"(- - b)",
+"(- - b>",
+"([- -])",
+"<{- -}>",
+"(d - -)",
+"<d - -)",
+"([- -])",
+"<{- -}>",
+};
+
+const char alphaNumericChars [] = "0123456789abcdefghijklmnopqrstuvwxyz";
+const char shiftAlphaNumericChars [] = ")!@#$%^&*(ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const char digitChars [] = "0123456789";
 #endif

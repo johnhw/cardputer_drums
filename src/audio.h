@@ -5,7 +5,8 @@
 #include "synth.h"
 
 
-void mix(DrumMachine& dm);
+void mixPatternToBuffer(DrumMachine& dm, int16_t *buffer);
+void resetMix(DrumMachine& dm);
 void feedPatternBuffers(DrumMachine &dm);
 void createSamples(DrumMachine& dm, kit_t &kit);
 void allocateMix(DrumMachine& dm);

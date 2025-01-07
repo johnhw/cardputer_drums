@@ -23,4 +23,6 @@ bool writeWavSD(String fname, int32_t samplerate, int16_t *samples, int32_t len)
 bool saveKitSD(const String &path, DrumMachine &dm);
 bool loadKitSD(const String &path, DrumMachine &dm);
 
+bool loadFont(M5GFX display, const String &path);
+
 #endif 

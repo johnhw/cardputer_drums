@@ -25,13 +25,13 @@ bool renderPattern(DrumMachine &dm)
     String justName = fname.substring(fname.lastIndexOf("/") + 1);
     String msg = "->" + justName;
 
-    lowerMessage(dm, msg.c_str());
+    lowerMessage(msg.c_str());
     bool success = renderToSD(dm, fname);
     
     if (!success)
     {
         msg = "Failed to render";
-        lowerMessage(dm, msg.c_str());
+        lowerMessage(msg.c_str());
         return false;
     }
     updatePattern(dm);
@@ -135,6 +135,9 @@ void initState(DrumMachine &dm)
 {
     // Allocate mix buffers
     allocateMix(dm);
+    
+    
+
     // print free heap space    
     
     dm.kit = -1;          // set to -1 so we always set the kit
@@ -151,7 +154,7 @@ void resetState(DrumMachine &dm)
 
     // reset the mode/action
     dm.lastMode = PLAY_MODE_PATTERN;
-    dm.nextAction = ACTION_NONE;
+    dm.bankAction = ACTION_NONE;
 
     // Set global bpm/swing
     dm.bpm = 120;

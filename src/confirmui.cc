@@ -24,7 +24,7 @@ void confirmModeKeys(DrumMachine &dm) {
 
 void confirmModeUpdate(DrumMachine &dm)
 {
-    lowerMessage(dm, "Confirm [Y]?");
+    lowerMessage("Confirm [Y]?");
 }
 
 void setGraphicsModeConfirm()

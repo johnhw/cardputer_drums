@@ -120,3 +120,18 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `s` cowbell
 * `t` damped bell
 * `u` crash
+
+## Preview mode
+
+* `fn+s` <n> save kit
+* `fn+o` <n> load kit
+* `fn+n` reset kit
+* `opt` hold for fine adjust
+* `alt` hold for coarse adjust
+* `alt+opt` hold for very coarse adjust
+* `↑` increase value
+* `↓` decrease value
+* ` ` reset parameter
+* `←` previous parameter
+* `→` next parameter 
+

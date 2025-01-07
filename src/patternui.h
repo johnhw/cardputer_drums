@@ -6,9 +6,10 @@
 #include "datatypes.h"
 #include "config.h"
 
+
 void updateCursor(DrumMachine &dm);
 void patternModeKeys(DrumMachine &dm);
-void patternKey(DrumMachine& dm, Keyboard_Class::KeysState status);
+void optKey(DrumMachine& dm, Keyboard_Class::KeysState status);
 void fnKey(DrumMachine& dm, Keyboard_Class::KeysState status);
 void setGraphicsModePattern();
 void redrawPattern(DrumMachine& dm);
@@ -21,10 +22,11 @@ void adjCursorKick(DrumMachine& dm, int adj);
 void moveCursor(DrumMachine& dm, int x, int y);
 void drawKitLoading(DrumMachine& dm, int kit);
 void drawTopLine(DrumMachine &dm);
-void lowerMessage(DrumMachine &dm, const char *message);
 void adjChanFilter(DrumMachine &dm, int adj);
 void adjChanVolume(DrumMachine &dm, int adj);
 void checkLiveDelete(DrumMachine &dm);  
+void loadBank(DrumMachine &dm, int16_t bank);
+void saveBank(DrumMachine &dm, int16_t bank);
 
 
 #endif

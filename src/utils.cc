@@ -66,28 +66,7 @@ String encodeString(int f) {
 
 int16_t getDigitPressed(Keyboard_Class::KeysState status)
 {
-   if (M5Cardputer.Keyboard.isKeyPressed('0'))
-    return 0;
-  if (M5Cardputer.Keyboard.isKeyPressed('1'))
-    return 1;
-  if (M5Cardputer.Keyboard.isKeyPressed('2'))
-    return 2;
-  if (M5Cardputer.Keyboard.isKeyPressed('3')) 
-    return 3;
-  if (M5Cardputer.Keyboard.isKeyPressed('4')) 
-    return 4;
-  if (M5Cardputer.Keyboard.isKeyPressed('5'))
-    return 5;
-  if (M5Cardputer.Keyboard.isKeyPressed('6'))
-    return 6;
-  if (M5Cardputer.Keyboard.isKeyPressed('7')) 
-    return 7;
-  if (M5Cardputer.Keyboard.isKeyPressed('8')) 
-    return 8;
-  if (M5Cardputer.Keyboard.isKeyPressed('9')) 
-    return 9;
-  return -1;
-
+  return getKeyIndex(digitChars);
 }
 
 float iirAlpha(int sr, float freq)
@@ -102,18 +81,34 @@ float halfLifeTime(int sr, float t)
   return exp(-log(2.0) / ((float)t * (float)sr + 0.0f));
 }
 
+  void lowerMessage(const char *message)
+  {
+    int statusHeight = 16;
+    M5Cardputer.Display.setTextColor(BLACK);
+    M5Cardputer.Display.setFont(&fonts::Font2);
+    M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_GREEN);
+    
+    M5Cardputer.Display.drawString(message, 10, M5Cardputer.Display.height() - statusHeight - 2);
+    M5Cardputer.Display.setTextColor(WHITE);
+    M5Cardputer.Display.setFont(&fonts::Font2);
+  }
 
 
 // check each character in string if pressed
 // return the index of the key pressed in the string
 // or -1 if no match 
-int8_t getKeyIndex(String pattern)
+int8_t getKeyIndex(const char *pattern)
 {
   int i;
-  for(i=0;i<pattern.length();i++)
+  for(i=0;i<strlen(pattern);i++)
   {
     if(M5Cardputer.Keyboard.isKeyPressed(pattern[i]))
       return i;
   }
   return -1;
+}
+
+int16_t getAlphanumericPressed(Keyboard_Class::KeysState status)
+{
+  return getKeyIndex(alphaNumericChars);
 }
