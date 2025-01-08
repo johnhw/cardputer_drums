@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "datatypes.h"
 #include "synth.h"
+#include "utils.h"
 
 
 void mixPatternToBuffer(DrumMachine& dm, int16_t *buffer);
@@ -13,6 +14,11 @@ void allocateMix(DrumMachine& dm);
 void allocSample(DrumMachine& dm, int8_t index, int32_t len);
 bool renderToSD(DrumMachine &dm, String fname);
 void autoSample(DrumMachine &dm, int drumIndex);
-void freeSample(DrumMachine &dm, int8_t index);
 void previewSample(DrumMachine &dm, sample_t *preview);
+void resetMix(DrumMachine &dm);
+void noUINextPattern(DrumMachine &dm);
+void clearSamples(DrumMachine &dm);
+void allocSamples(DrumMachine &dm);
+void recalcBPM(DrumMachine &dm);
+
 #endif 

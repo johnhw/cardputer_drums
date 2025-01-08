@@ -1,4 +1,5 @@
 #include "confirmui.h"
+#include "utils.h"
 
 void confirmModeKeys(DrumMachine &dm) {
     if (M5Cardputer.Keyboard.isChange())

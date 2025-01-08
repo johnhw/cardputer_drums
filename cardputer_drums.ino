@@ -24,17 +24,14 @@
 
 // live recording
 // CHESNEY HAWKES MODE
-// Custom font (maybe impossible?)
 // waveform render for samples in preview mode and slicer
 // fix pattern switch visual sync (off by 1/2 bar)
-// arena mode for sample allocation
-// banks for pattern, kit save
+// banks for kit save / better error messages
 // add filter cutoff to preview UI/editor / trim / waveform display
 // Loop samples / trim samples
 // flams: double flam, triple flam, roll, reverse
-// UI for step and channel tuning; 
-// save/load sample adjustments in patterns, channels (twice; in patterns and in kits)
-
+// UI for step and channel tuning
+// save/load sample adjustments in kits
 
 // maybe:
 // chords in kits
@@ -98,8 +95,7 @@ void splash()
 
   splashSprite.setTextColor(TFT_LIGHTGREY);
   splashSprite.drawString("BonnetHead", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 - 50);
-
-  loadFont(splashSprite, "/routed_7.vlw");
+  
   splashSprite.setFont(&fonts::Font0);
   splashSprite.setTextColor(TFT_BLACK);
   splashSprite.drawString(VERSION, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 - 20 );
@@ -108,21 +104,22 @@ void splash()
   splashSprite.fillRect(0, M5Cardputer.Display.height() / 2 + 45, M5Cardputer.Display.width(), 55, RGB565(0,0,0));
   // draw text in small font below  
   splashSprite.setTextColor(TFT_WHITE);
-  splashSprite.drawString("W I L L I A M S O N  I N D U S T R I E S", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 + 50 );
+  splashSprite.drawString("W I L L I A M S O N  I N D U S T R I E S", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 + 52 );
   
 
 }
 
+
 void setup(void)
 {  
-  allocArena(&machine.arena, SAMPLE_ARENA_SIZE);
+  
   initCardputer();
   Serial.println("\n\n\nBonnetHead "+VERSION+"\n\n\n");
   initState(machine);
   splash();    
   
   resetState(machine);
-  String fname = "startup";
+  String fname = "/startup.drm";
   bool success = loadDrumMachine(machine, fname);  
   if(!success)
   {

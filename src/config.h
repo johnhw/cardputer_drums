@@ -2,18 +2,21 @@
 #define CONFIG_H
 #include <stdint.h>
 #include <Arduino.h>
-static constexpr const int32_t samplerate = 16000;
-static constexpr const int16_t nSteps = 16;
-static constexpr const int16_t nChans = 8;
-static constexpr const int16_t maxPatterns = 36;
+static constexpr const int32_t samplerate = 16000; // sample rate in Hz
+static constexpr const int16_t nSteps = 16; // number of steps in a pattern
+static constexpr const int16_t nChans = 8; // number of channels
+static constexpr const int16_t maxPatterns = 36; // maximum number of patterns
 static constexpr const int16_t kickSubdiv = 12; // subdivisions per unit time
 static constexpr const int16_t minBPM = 60;     // minimum bpm
-static constexpr const int16_t cursorFlashTime = 200;
-static constexpr const int16_t maxPatternSequence = 36;
+static constexpr const int16_t cursorFlashTime = 200; // time in ms for the cursor to flash
+static constexpr const int16_t maxPatternSequence = 36; // maximum length of the pattern sequence
 static constexpr const int16_t maxFilterCutoff = 16; // number of steps in the filter cutoff
 static constexpr const int16_t maxChannelVolume = 16; // number of steps in the channel volume setting
-static constexpr const float maxSampleLen = 0.5; 
-static constexpr const int32_t SAMPLE_ARENA_SIZE = 160000;
+static constexpr const float maxSampleLen = 0.5; // maximum length in seconds of a sample
+static constexpr const int32_t SAMPLE_ARENA_SIZE = 160000; // number of samples in the kit arena (all samples are consecutive slices of this)
+
+static constexpr const int32_t bufferBeats = 8; // division of a bar in one audio buffer (4 = 1/4 bar)
+
 const String VERSION = "1.0.2";
 const String basePathPattern = "/bonnethead/patterns"; // paths in the filesystem to save/load from
 const String basePathKits = "/bonnethead/kits"; 
@@ -38,14 +41,14 @@ const String basePathRoot = "/bonnethead";
 
 
 const String ASCIIDance[] = {
-"(- - b)",
-"(- - b>",
+"(- - ])",
+"(- - })",
 "([- -])",
-"<{- -}>",
-"(d - -)",
-"<d - -)",
+"({- -})",
+"([ - -)",
+"({ - -)",
 "([- -])",
-"<{- -}>",
+"({- -})",
 };
 
 const char alphaNumericChars [] = "0123456789abcdefghijklmnopqrstuvwxyz";

@@ -1,10 +1,11 @@
 #include "flash.h"
+#include "utils.h"
 #include <M5Cardputer.h>
 #include <vector>
 #include <SD.h>
 #include <SPI.h>
 #include "audio.h"
-#include <M5GFX.h>
+
 
 #define FORMAT_SPIFFS_IF_FAILED true
 
@@ -21,7 +22,9 @@ bool initLittleFS()
     {
         LittleFSError("Failed to mount SPIFFS");
         return false;
-    }
+    }    
+    
+
     return true;
 }
 
@@ -29,6 +32,7 @@ bool loadFile(const String &path, String &content)
 {
 
     File file = LittleFS.open(path, FILE_READ);
+    Serial.println("Loading file: " + path);
     if (!file)
     {
         LittleFSError("Failed to open file for reading");
@@ -44,8 +48,9 @@ bool loadFile(const String &path, String &content)
 // Save a buffer to a file in SPIFFS
 bool saveFile(const String &path, const String &content)
 {
-
+    Serial.println("Saving file: " + path);
     File file = LittleFS.open(path, "w");
+    Serial.println("Opened file");
     if (!file)
     {
         LittleFSError("Failed to open file for writing");
@@ -258,6 +263,7 @@ bool loadKitSD(const String &path, DrumMachine &dm)
 {
     int oldKit = dm.kit;
     bool foundSamples = false;
+    clearSamples(dm);
     // iterate over a.wav through y.wav
     for (int i = 0; i < 26; i++)
     {
@@ -266,9 +272,7 @@ bool loadKitSD(const String &path, DrumMachine &dm)
         String fullPath = path + "/" + fname;
 
         File file = SD.open(fullPath, FILE_READ);
-                   
-        // clear the sample
-        freeSample(dm, i);
+                           
 
         // skip missing files
         if (!file)

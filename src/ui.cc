@@ -51,13 +51,6 @@ void updatePattern(DrumMachine &dm)
     requestMix(dm);
 }
 
-void recalcBPM(DrumMachine &dm)
-{
-    dm.stepSamples = samplerate * 60 / (dm.bpm * 4);
-    dm.oneKickTime = dm.stepSamples / kickSubdiv;
-    dm.patternSamples = dm.stepSamples * nSteps;
-    dm.waveBufferLen = dm.patternSamples / 4;
-}
 
 void initCursor(cursor_t &cursor)
 {
@@ -72,8 +65,8 @@ void initCursor(cursor_t &cursor)
 // save the current drum machine state to a file
 bool saveDrumMachine(DrumMachine &dm, String &fname)
 {
-
-    File ser = LittleFS.open(basePathPattern + "/" + fname, "w");
+    Serial.println("Saving drum machine state to " + fname);
+    File ser = LittleFS.open(fname, "w");
     if (!ser)
     {
         Serial.println("Failed to open file for writing");
@@ -96,9 +89,8 @@ void reinitState(DrumMachine &dm)
 // load a drum machine state from a file
 bool loadDrumMachine(DrumMachine &dm, String &fname)
 {
-
     bool success;
-    File ser = LittleFS.open(basePathPattern + "/" + fname, "r");
+    File ser = LittleFS.open(fname, "r");
     if (!ser)
     {
         Serial.println("Failed to open file for reading");
@@ -113,7 +105,6 @@ bool loadDrumMachine(DrumMachine &dm, String &fname)
         
         return false;
     }
-
     reinitState(dm);
     if (oldKit != dm.kit)
     {
@@ -121,7 +112,6 @@ bool loadDrumMachine(DrumMachine &dm, String &fname)
         dm.kit = -1;
         setKit(dm, oldKit);
     }
-
 
     if(dm.splashFlag)
     {
@@ -133,10 +123,11 @@ bool loadDrumMachine(DrumMachine &dm, String &fname)
 
 void initState(DrumMachine &dm)
 {
+    Serial.println("Initializing drum machine state");
     // Allocate mix buffers
+    createArena(&dm.sampleArena);
     allocateMix(dm);
-    
-    
+    Serial.println("Allocated mix buffers");
 
     // print free heap space    
     
@@ -145,6 +136,7 @@ void initState(DrumMachine &dm)
     dm.nKits = nDrumKits; // initialize the number of kits (defined in kits.h)
     dm.splashFlag = true;
 }
+
 
 // reset the state
 void resetState(DrumMachine &dm)
@@ -240,8 +232,7 @@ void setKit(DrumMachine &dm, int kit)
 
 void updateMix(DrumMachine &dm, int16_t step, int16_t chan)
 {
-    // for now, just mix the whole pattern
-    // mix();
+    // for now, just mix the whole pattern    
     dm.syncMix = 1; // flag to update on next loop
 }
 
@@ -291,9 +282,7 @@ void nextPattern(DrumMachine &dm)
     // then advance to the next pattern in the sequence
     if (dm.patternMode == 1 && strlen(dm.patternSequence) > 0)
     {
-
         pattern = dm.patternSequence[dm.patternSeqIndex];
-
         setPattern(dm, pattern);
         updatePattern(dm);
         dm.patternSeqIndex++;
@@ -321,8 +310,6 @@ void updateUI(DrumMachine &dm)
         patternModeUpdate(dm);
     if (dm.playMode == PLAY_MODE_PREVIEW)
         previewModeUpdate(dm);
-    if (dm.playMode == PLAY_MODE_CONFIRM)
-        confirmModeUpdate(dm);
     if (dm.playMode == PLAY_MODE_HELP)
         helpModeUpdate(dm);
 }
@@ -341,10 +328,6 @@ void setPlayMode(DrumMachine &dm, int mode)
     if (mode == PLAY_MODE_PREVIEW)
     {
         setGraphicsModePreview();
-    }
-    if (mode == PLAY_MODE_CONFIRM)
-    {
-        setGraphicsModeConfirm();
     }
     if (mode == PLAY_MODE_HELP)
     {

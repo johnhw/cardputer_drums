@@ -2,14 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+char arenaBuffer[SAMPLE_ARENA_SIZE]; // the actual global arena buffer
 
-arena_t *initInitArena(int64_t maxSize)
+void createArena(arena_t *arena)
 {
-    arena_t *arena = (arena_t *)malloc(sizeof(arena_t));
-    arena->start = malloc(maxSize);
+    arena->start = arenaBuffer; 
     arena->top = arena->start;
-    arena->end = arena->start + maxSize;
-    return arena;
+    arena->end = arena->start + SAMPLE_ARENA_SIZE;    
 }
 
 void clearArena(arena_t *arena)
@@ -17,20 +16,20 @@ void clearArena(arena_t *arena)
     arena->top = arena->start;
 }
 
-int64_t getArenaFree(arena_t *arena)
+int32_t getArenaFree(arena_t *arena)
 {
-    return (byte *)(arena->end) - (byte *)arena->top;
+    return (int32_t)((byte *)(arena->end) - (byte *)arena->top);
 }
 
-void *allocArena(arena_t *arena, int64_t *size)
+void *allocArena(arena_t *arena, int32_t size)
 {
     void *ptr = arena->top;
-    if(arena->top + *size > arena->end)
-    {
-        *size = 0;
+    if(arena->top + size > arena->end)
+    {        
         return nullptr;
     }
-    arena->top += *size;    
+    arena->top += size;    
+    return ptr;
 }
 
 void* allocBuffer(void* buffer, int16_t len, int32_t size) {

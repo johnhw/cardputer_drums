@@ -3,7 +3,7 @@
 #include <LittleFS.h>
 #include <vector>
 #include "datatypes.h"
-
+#include <M5GFX.h>
 
 // functions for SPIFFS file system
 void littlefsError(char *msg);

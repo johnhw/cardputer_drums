@@ -316,7 +316,7 @@ void noModifierKey(DrumMachine &dm)
 void loadBank(DrumMachine &dm, int16_t bank)
 {
   char filename[128];
-  sprintf(filename, "bank-%04d.dat", bank);
+  sprintf(filename, "/bank-%04d.drm", bank);
   String fname = String(filename);
   if (loadDrumMachine(dm, fname))
   {
@@ -333,7 +333,7 @@ void loadBank(DrumMachine &dm, int16_t bank)
 void saveBank(DrumMachine &dm, int16_t bank)
 {
   char filename[128];
-  sprintf(filename, "bank-%04d.dat", bank);
+  sprintf(filename, "/bank-%04d.drm", bank);
     String fname = String(filename);
   if (saveDrumMachine(dm, fname))
   {
@@ -585,12 +585,13 @@ void patternModeKeys(DrumMachine &dm)
       toggleLiveMode(dm);
     }
     // file operations (to be completed)
-    String fname = "startup";
+   
     if (M5Cardputer.Keyboard.isKeyPressed('n'))
       resetState(dm);
     if (M5Cardputer.Keyboard.isKeyPressed('s'))
     {
-      lowerMessage(("Save -> " + fname).c_str());
+      lowerMessage("Saved");
+      String fname = "/startup.drm";
       saveDrumMachine(dm, fname);
     }
     if (M5Cardputer.Keyboard.isKeyPressed('r'))
@@ -598,14 +599,14 @@ void patternModeKeys(DrumMachine &dm)
 
     if (M5Cardputer.Keyboard.isKeyPressed('a'))
     {
-      dm.bankAction = ACTION_LOAD;
-      lowerMessage("Load bank:");
+      dm.bankAction = ACTION_SAVE;
+      lowerMessage("Save bank:");
     }
 
     if (M5Cardputer.Keyboard.isKeyPressed('o'))
     {
-      dm.bankAction = ACTION_SAVE;
-      lowerMessage("Save bank:");
+      dm.bankAction = ACTION_LOAD;
+      lowerMessage("Load bank:");    
     }
 
     if (M5Cardputer.Keyboard.isKeyPressed('c'))

@@ -180,11 +180,13 @@ void previewModeUpdate(DrumMachine &dm)
         if (M5Cardputer.Keyboard.isKeyPressed(','))
         {
           prevKitParam(dm);
+          dm.previewData.previewDirty = true; 
           redrawPreview(dm);
         }
         if (M5Cardputer.Keyboard.isKeyPressed('/'))
         {
           nextKitParam(dm);
+          dm.previewData.previewDirty = true; 
           redrawPreview(dm);
         }
       }
@@ -301,6 +303,49 @@ void playPreviewSample(DrumMachine &dm, char sample)
     previewSample(dm, samplePtr);
 }
 
+// render a waveform to the screen
+// draw the waveform with steps proportional to the width of the screen
+// show red lines at the start and end of the trim region (remember end counts back from then end!)
+void renderWaveform(sample_t *sample, int32_t baseY)
+{    
+  int32_t width = M5Cardputer.Display.width() * 0.66;
+  int32_t height = 30;
+  int32_t len = sample->len;
+  int32_t trimStart = sample->adjustments.trimStart;
+  int32_t trimEnd = sample->adjustments.trimEnd;
+  int32_t actualEnd = len - trimEnd;
+  int32_t x, y;
+  int32_t lastX = 0;
+  int32_t lastY = 0;
+  int32_t i;
+  int32_t step = len / width;
+  int32_t baseX = (M5Cardputer.Display.width() - width) / 2;
+
+  // draw baseline
+  M5Cardputer.Display.drawLine(baseX, baseY, baseX + width, baseY, TFT_GREEN);
+
+  // draw the waveform
+  for(i=0;i<width;i++)
+  {
+    x = i + baseX;
+    y = baseY - (sample->samples[i*step] * height / 32768);
+    if(i>0)
+    {
+      M5Cardputer.Display.drawLine(lastX, lastY, x, y, TFT_WHITE);
+    }
+    lastX = x;
+    lastY = y;
+  }
+
+  // compute actual pixel start and end positions
+  int32_t start = baseX + trimStart * width / len;
+  int32_t end = baseX + actualEnd * width / len;
+  M5Cardputer.Display.drawLine(start, baseY - height, start, baseY + height, TFT_RED);
+  M5Cardputer.Display.drawLine(end, baseY - height, end, baseY + height, TFT_RED);
+
+
+}
+
 void redrawPreview(DrumMachine &dm)
 {
   // skip if nothing has changed
@@ -338,15 +383,16 @@ void redrawPreview(DrumMachine &dm)
 
   M5Cardputer.Display.setFont(&fonts::Font2);
   M5Cardputer.Display.setTextColor(TFT_BLACK);
-  M5Cardputer.Display.drawString(msg, M5Cardputer.Display.width() / 2+1, M5Cardputer.Display.height() / 2+1);
+  M5Cardputer.Display.drawString(msg, M5Cardputer.Display.width() / 2+1-10, M5Cardputer.Display.height() / 2+1-10);
   M5Cardputer.Display.setTextColor(TFT_WHITE);
-  M5Cardputer.Display.drawString(msg, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2);
+  M5Cardputer.Display.drawString(msg, M5Cardputer.Display.width() / 2-10, M5Cardputer.Display.height() / 2-10);
 
-  // draw just the current param again
-  snprintf(msg, 255, "%7s %05d", currentParam.c_str(), current);
+  sample_t *samplePtr = getSample(dm, sample);
+  if (samplePtr)
+  {
+    renderWaveform(samplePtr, 100);
+  }
 
-  M5Cardputer.Display.setTextColor(RED);
-  M5Cardputer.Display.drawString(msg, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2);
   dm.previewData.previewDirty = false;
 }
 

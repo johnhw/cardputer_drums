@@ -187,7 +187,6 @@ bool writeDrumMachine(DrumMachine &dm, File &ser)
 
     writeChannels(dm, ser);
     writePatterns(dm, ser);
-
     writeSampleAdjustments(dm, ser);
 
 
@@ -215,7 +214,6 @@ bool readDrumMachine(DrumMachine &dm, File &ser)
     dm.pattern = getToken(ser);
     dm.kit = getToken(ser);
     dm.volume = getToken(ser);
-
     dm.patternMode = getToken(ser);
 
 
@@ -229,8 +227,7 @@ bool readDrumMachine(DrumMachine &dm, File &ser)
     strcpy(dm.patternSequence, patternSequence);
     
     readChannels(dm, ser);
-    readPatterns(dm, ser);    
-    readPatterns(dm, ser);
+    readPatterns(dm, ser);        
     readSampleAdjustments(dm, ser);
 
     int end = getToken(ser);

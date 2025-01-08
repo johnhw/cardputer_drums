@@ -1,7 +1,6 @@
 #ifndef DATATYPES_H
 #define DATATYPES_H
 #include <stdint.h>
-#include "utils.h"
 #include "config.h"
 
 // one channel
@@ -71,6 +70,15 @@ typedef struct cursor_t
   int8_t dirty;
 } cursor_t;
 
+// memory arena for samples
+typedef struct arena_t {
+    void* start;
+    void* end;    
+    void *top;
+} arena_t;
+
+
+
 // data for mixing one channel into the final mix
 typedef struct mixData_t
 {
@@ -101,7 +109,8 @@ struct DrumMachine {
     int16_t* audioBuffers[N_BUFFERS]; // double buffering
     int16_t *scratchBuffer; // points to audioBuffers[0]
     int16_t *bufferA, *bufferB; // the two buffers
-    
+    arena_t sampleArena; // memory arena for samples
+
     int32_t mixIndex = 0; // current index inside the pattern (in samples)
     int8_t waveBufferIndex = 0; // current buffer count (4 buffers per bar)
     int32_t patternSamples; // number of samples in a whole pattern
