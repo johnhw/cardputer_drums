@@ -16,6 +16,7 @@ void createArena(arena_t *arena)
 void clearArena(arena_t *arena)
 {
     arena->top = arena->start;
+    memset(arena->start, 0, SAMPLE_ARENA_SIZE);
 }
 
 int32_t getArenaFree(arena_t *arena)
@@ -26,7 +27,7 @@ int32_t getArenaFree(arena_t *arena)
 void *allocArena(arena_t *arena, int32_t size)
 {
     void *ptr = arena->top;
-    if(arena->top + size > arena->end)
+    if(arena->top + size >= arena->end)
     {        
         return nullptr;
     }
@@ -71,11 +72,22 @@ int16_t getDigitPressed(Keyboard_Class::KeysState status)
 }
 
 float iirAlpha(float normFreq)
-{    
-  Serial.printf("IIR alpha: %f\n", normFreq);
+{      
   float wc = 2 * M_PI * normFreq;
   float alpha = exp(-wc);  
   return alpha;
+}
+
+void *getArenaTop(arena_t *arena)
+{
+  return arena->top;
+}
+
+void setArenaTop(arena_t *arena, void *top)
+{
+  arena->top = top;
+  if(arena->top > arena->end)
+    arena->top = arena->end;
 }
 
 float halfLifeTime(int sr, float t)

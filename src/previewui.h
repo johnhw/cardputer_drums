@@ -31,12 +31,12 @@ enum PARAMS
     PARAM_N
 };
 
-#define MAX_SAMPLE_ADJUST 64000
+#define MAX_SAMPLE_ADJUST 160000
 
 const int32_t paramLimits[PARAM_N][2] = {
     {-2400, 2400}, // detune
     {-2000, 2000}, // volume    
-    {0, 2000}, // cutoff
+    {0, 1000}, // cutoff
     {-MAX_SAMPLE_ADJUST, MAX_SAMPLE_ADJUST}, // trim start
     {0, MAX_SAMPLE_ADJUST}, // trim end
     {0, MAX_SAMPLE_ADJUST}, // loop start

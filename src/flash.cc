@@ -6,7 +6,6 @@
 #include <SPI.h>
 #include "audio.h"
 
-
 #define FORMAT_SPIFFS_IF_FAILED true
 
 char LittleFSErrorBuf[256];
@@ -22,8 +21,7 @@ bool initLittleFS()
     {
         LittleFSError("Failed to mount SPIFFS");
         return false;
-    }    
-    
+    }
 
     return true;
 }
@@ -115,17 +113,15 @@ std::vector<String> listFiles(const String &path)
     }
 }
 
-
 /* Load a font from SPIFFS and add it to the display */
 bool loadFont(M5GFX display, const String &path)
-{    
+{
     if (!display.loadFont(LittleFS, path.c_str()))
     {
         Serial.println("Failed to load font " + path);
         return false;
     }
     return true;
-
 }
 
 // select strings with a given prefix
@@ -200,7 +196,6 @@ bool listKitsSD(std::vector<String> &kits)
     return true;
 }
 
-
 #define WAV_HEADER_LEN 44
 
 /* Validate that the 44 byte header is a valid wav file
@@ -230,7 +225,7 @@ bool validateWavHeader(byte *buffer)
    named a.wav, b.wav, ..., z.wav */
 bool saveKitSD(const String &path, DrumMachine &dm)
 {
-    
+
     createDirIfNotExistsSD(path);
     // iterate over a.wav through y.wav
     for (int i = 0; i < 26; i++)
@@ -239,22 +234,14 @@ bool saveKitSD(const String &path, DrumMachine &dm)
         String fullPath = path + "/" + fname;
         int j = i + 1;
         bool success = writeWavSD(fullPath, samplerate, dm.drumSamples[i].samples, dm.drumSamples[i].len);
-
         if (!success)
         {
             Serial.println("Failed to open kit file for writing: " + fullPath);
             continue;
         }
-        else
-        {
-            Serial.println("Wrote sample: " + fullPath);
-        }
     }
-    Serial.println("Wrote kit");
     return true;
 }
-
-
 
 /* Replace all samples in a drum machine with loaded
 files from an SD card, assuming the files are named
@@ -267,12 +254,9 @@ bool loadKitSD(const String &path, DrumMachine &dm)
     // iterate over a.wav through y.wav
     for (int i = 0; i < 26; i++)
     {
-        
         String fname = String((char)('a' + i - 1)) + ".wav";
         String fullPath = path + "/" + fname;
-
         File file = SD.open(fullPath, FILE_READ);
-                           
 
         // skip missing files
         if (!file)
@@ -280,16 +264,6 @@ bool loadKitSD(const String &path, DrumMachine &dm)
             Serial.println("Failed to open file for reading: " + fullPath);
             continue;
         }
-
-        // read the sample
-        int16_t len = file.size();
-        int16_t *buffer = dm.audioBuffers[0];
-        // make len maximum the size of the buffer
-        if (len > dm.waveBufferLen + WAV_HEADER_LEN)
-        {
-            len = dm.waveBufferLen + WAV_HEADER_LEN;
-        }
-
         // read the header into a buffer
         byte header[WAV_HEADER_LEN];
         if (file.read(header, WAV_HEADER_LEN) != WAV_HEADER_LEN)
@@ -303,12 +277,17 @@ bool loadKitSD(const String &path, DrumMachine &dm)
             Serial.println("Invalid WAV header");
             continue;
         }
-        if (file.read((byte *)buffer, len) != len - 44)
-        {
-            Serial.println("Failed to read sample data");
-            continue;
-        }
-        autoSample(dm, i); // copy from wavebuffer[0] to drumSamples[i]
+
+        // read the sample
+        int32_t len = file.size();
+        int32_t freeSpace = getArenaFree(&dm.sampleArena);
+        int32_t maxLen = min(len - WAV_HEADER_LEN, freeSpace);
+        maxLen = maxLen / sizeof(int16_t);
+        int32_t byteLen = maxLen * sizeof(int16_t);
+        int16_t *buffer = (int16_t *)allocArena(&dm.sampleArena, byteLen);
+        file.read((byte *)buffer, byteLen);
+        dm.drumSamples[i].samples = buffer;
+        dm.drumSamples[i].len = maxLen;                
         foundSamples = true;
         file.close();
     }
@@ -416,7 +395,7 @@ bool appendWAVToSD(String fname, int16_t *audioData, size_t length)
     }
 
     // Write audio data to file
-    file.write((byte *)audioData, length*2);
+    file.write((byte *)audioData, length * 2);
     file.flush();
 
     // Close the file

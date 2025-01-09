@@ -86,7 +86,7 @@ void subCreateSynth(sample_t *sample, int32_t samplerate, synth_t *synth, int32_
   {
     lowpass = lowpassEnd + lowpassOffset;
     if(lowpass>0)
-      lowpassAlpha = iirAlpha(lowpass/samplerate);
+      lowpassAlpha = iirAlpha((lowpass/samplerate)*0.5);//TODO:FIX
     else
       lowpassAlpha = 0.0;
     freq = endFreq + freqOffset;

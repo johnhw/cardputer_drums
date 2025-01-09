@@ -24,9 +24,8 @@
 
 // chiptunes kits
 // CHESNEY HAWKES MODE
-// better  filter cutoff settings
+// fix card info for filter/volume keys
 // beat slicer?
-// fix glitching loaded samples (probably scratch buffer)
 // fix pattern switch visual sync (off by 1/2 bar)
 // better error messages etc. for kit load/save
 // Loop samples 

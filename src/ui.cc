@@ -208,7 +208,7 @@ void setKit(DrumMachine &dm, int kit)
     // is this a base kit? resynth the samples
     if(dm.kit < nDrumKits)
     {
-        createSamples(dm, drumKits[dm.kit]);
+        synthKitSamples(dm, drumKits[dm.kit]);
         requestMix(dm);
         return;
     }
@@ -328,7 +328,7 @@ void setPlayMode(DrumMachine &dm, int mode)
     if (mode == PLAY_MODE_PREVIEW)
     {
         
-        initPreviewMode();
+        initPreviewMode(dm);
     }
     if (mode == PLAY_MODE_HELP)
     {

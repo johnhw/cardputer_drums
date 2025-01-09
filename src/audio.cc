@@ -29,28 +29,6 @@ int32_t findSampleEnd(int16_t *sample, int32_t len, int32_t win, double threshol
     return win;
 }
 
-void allocSample(DrumMachine &dm, int8_t index, int32_t len)
-{
-    Serial.printf("Allocating sample %d, len %d\n", index, len);
-    int32_t arenaFree = getArenaFree(&dm.sampleArena);
-    
-    if (arenaFree < len * sizeof(int16_t))
-    {
-        Serial.println("Out of memory");
-        dm.drumSamples[index].samples = nullptr;
-        dm.drumSamples[index].len = 0;
-        return;
-    }
-    dm.drumSamples[index].samples = (int16_t *)allocArena(&dm.sampleArena, len * sizeof(int16_t));
-
-    if (dm.drumSamples[index].samples == nullptr)
-    {
-        Serial.println("Failed to allocate buffer");
-        dm.drumSamples[index].len = 0;
-        return;
-    }
-    dm.drumSamples[index].len = len;
-}
 
 void allocateMix(DrumMachine &dm)
 {
@@ -60,6 +38,7 @@ void allocateMix(DrumMachine &dm)
     bufSamples = maxPatSamples / bufferBeats;
     for (int i = 0; i < N_BUFFERS; i++)
         dm.audioBuffers[i] = (int16_t *)allocBuffer(dm.audioBuffers[i], bufSamples, sizeof(int16_t));
+    dm.maxBufferLen = bufSamples;
     dm.scratchBuffer = dm.audioBuffers[0]; // TODO: make end of arena?
     dm.bufferA = dm.audioBuffers[0];
     dm.bufferB = dm.audioBuffers[1];
@@ -67,41 +46,46 @@ void allocateMix(DrumMachine &dm)
     dm.waveBufferIndex = 0;
 }
 
-// find the true length of the sample, and allocate it
-// then copy in the data from the scratch buffer
-void autoSample(DrumMachine &dm, int drumIndex)
-{
-    int32_t maxSamples = samplerate * maxSampleLen;
-    // use audiobuffers as a scratch space
-    int32_t len = findSampleEnd(dm.scratchBuffer, dm.waveBufferLen, 100, 0.03);
-    len = min(len, maxSamples);
-    allocSample(dm, drumIndex, len);
-    memcpy(dm.drumSamples[drumIndex].samples, dm.scratchBuffer, dm.drumSamples[drumIndex].len * sizeof(int16_t));
-    memset(dm.scratchBuffer, 0, dm.waveBufferLen * sizeof(int16_t));
-    return;
-}
-
 void makeSynth(DrumMachine &dm, int index, synth_t *synth)
 {
     sample_t scratchSample;
-    scratchSample.samples = dm.scratchBuffer;
-    scratchSample.len = dm.waveBufferLen - 1;
+    
+    Serial.printf("Making synth %d\n", index);
+    int32_t arenaFree = getArenaFree(&dm.sampleArena);
+    if(arenaFree<=0)
+    {
+        Serial.println("Out of memory");
+        dm.drumSamples[index].samples = nullptr;
+        dm.drumSamples[index].len = 0;
+        return;
+    }
+    scratchSample.samples = (int16_t *)getArenaTop(&dm.sampleArena);    
+    scratchSample.len = arenaFree / sizeof(int16_t) - 1;
+    scratchSample.len = min(scratchSample.len, (int32_t)(samplerate * maxSampleLen)); // limit max sample size    
     createSynth(&scratchSample, samplerate, synth);
-    autoSample(dm, index);
+    int32_t trueLen = findSampleEnd(scratchSample.samples, scratchSample.len, 100, 0.03);    
+    scratchSample.len = trueLen;    
+    // adjust arena top
+    setArenaTop(&dm.sampleArena, scratchSample.samples + scratchSample.len);
+    dm.drumSamples[index] = scratchSample;
 }
 
 void clearSamples(DrumMachine &dm)
 {
     clearArena(&dm.sampleArena);
+    for(int i = 0; i < 27; i++)
+    {
+        dm.drumSamples[i].samples = nullptr;
+        dm.drumSamples[i].len = 0;
+    }
 }
 
-void createSamples(DrumMachine &dm, kit_t &kit)
+void synthKitSamples(DrumMachine &dm, kit_t &kit)
 {
 
     clearSamples(dm);
     // 8 semitones from middle-c
     int16_t noteFreqs[] = {261, 294, 330, 350, 392, 440, 493, 523};
-
     synth_t bass = kit.synths[0];
 
     // sample 0 is empty and not allocated
@@ -140,8 +124,8 @@ void previewSample(DrumMachine &dm, sample_t *preview)
     int32_t len = preview->len;
     int32_t end = len - preview->adjustments.trimEnd;
     int32_t out;
-    float sampleCutoff = 0.5 - (preview->adjustments.cutoff / 2000.0);
-    float alpha = iirAlpha(sampleCutoff);
+    float sampleCutoff = 1 - (preview->adjustments.cutoff / 1000.0);
+    float alpha = iirAlpha(sampleCutoff * sampleCutoff);
     float filter = 0.0f;
     float gain = cBGain(preview->adjustments.volume);
     for (int i = 0; i < dm.waveBufferLen; i++)
@@ -237,10 +221,11 @@ void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer)
                     mixData[chan].totalGain = mixData[chan].channelGain * mixData[chan].currentVelocity * cBGain(newSample->adjustments.volume);
 
                     // sample cutoff is min of channel and sample cutoff
-                    float channelCutoff = (maxFilterCutoff - dm.channels[chan].filterCutoff) / maxFilterCutoff;
-                    float sampleCutoff = (0.5 - newSample->adjustments.cutoff / 2000.0);
+                    float channelCutoff = (float)(maxFilterCutoff - dm.channels[chan].filterCutoff) / (float)maxFilterCutoff;
+                    float sampleCutoff = (1 - newSample->adjustments.cutoff / 1000.0);
+                    
                     float cutoff = min(channelCutoff, sampleCutoff);
-                    mixData[chan].filterAlpha = iirAlpha(cutoff);
+                    mixData[chan].filterAlpha = iirAlpha(cutoff*cutoff); // square the cutoff for a more linear response
                 }
             }
             mixData[chan].kickDelay--;
@@ -351,6 +336,7 @@ bool renderToSD(DrumMachine &dm, String fname)
         return false;
     // restore where we were
     dm.waveBufferIndex = 0;
+    resetMix(dm);
     dm.patternSeqIndex = oldPatternSeqIndex;
     return true;
 }

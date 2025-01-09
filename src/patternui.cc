@@ -482,7 +482,7 @@ void patternModeKeys(DrumMachine &dm)
     // shift-press for fill
     int8_t shiftDigit = getKeyIndex(")!@#$%^&*(ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     // note: backspace appears as shift-8!
-    if (shiftDigit >= 0 && !M5Cardputer.Keyboard.isKeyPressed(KEY_BACKSPACE) && !M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER))
+    if (shiftDigit >= 0 && !M5Cardputer.Keyboard.isKeyPressed(KEY_BACKSPACE) && !M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER) && dm.lastPattern == -1)
     {
 
       dm.fillPattern = shiftDigit;

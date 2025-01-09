@@ -23,6 +23,8 @@ void lowerMessage(const char *message);
 void createArena(arena_t *arena);
 void *allocArena(arena_t *arena, int32_t size);
 void clearArena(arena_t *arena);
+void *getArenaTop(arena_t *arena);
+void setArenaTop(arena_t *arena, void *top);
 int32_t getArenaFree(arena_t *arena);
 float cBGain(float cb);
 

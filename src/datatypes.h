@@ -114,8 +114,10 @@ struct DrumMachine {
 
     int32_t mixIndex = 0; // current index inside the pattern (in samples)
     int8_t waveBufferIndex = 0; // current buffer count (4 buffers per bar)
+    
     int32_t patternSamples; // number of samples in a whole pattern
-    int16_t waveBufferLen;  // samples in one buffer (1/4 pattern)
+    int16_t waveBufferLen;  // samples in one buffer for a 1/4 pattern
+    int32_t maxBufferLen; // true (max) length of the buffer
     int8_t playMode = 0;    // 0=normal; 1=sample preview
     int16_t syncMix = 0;    // flag to indicate to remix at the next pattern loop
     int16_t stepSamples;    // length of one step in samples (usually 1/16th of a pattern)
