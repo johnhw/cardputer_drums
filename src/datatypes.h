@@ -17,8 +17,8 @@ typedef struct channel_t
 typedef struct sample_adjustment_t
 {
   int32_t detune = 0; // detune in cents
-  int32_t cutoff = 0; 
-  int32_t volume = 0; // signed, each step is 3dB
+  int32_t cutoff = 0; // cutoff; +1000 cutoff = 0, 0 = SR 
+  int32_t volume = 0; // signed, each step is 1/10th of a dB (centibels)
   int32_t trimStart = 0; // start of the sample (negative = delay)
   int32_t trimEnd = 0; // offset from end of the sample (always positive)
   int32_t loopStart = 0; // start of the loop 
@@ -26,7 +26,7 @@ typedef struct sample_adjustment_t
   // envelope (TODO)
   int32_t attackTime = 0; // attack time in ms
   int32_t decayTime = 0; // decay time in ms
-  int32_t sustainLevel = 0; // sustain level in dB
+  int32_t sustainLevel = 0; // sustain level in 1/100th of a dB
   int32_t releaseTime = 0; // release time in ms
 } sample_adjustment_t;
 
@@ -82,18 +82,19 @@ typedef struct arena_t {
 // data for mixing one channel into the final mix
 typedef struct mixData_t
 {
-  sample_t *currentSample;  
-  int32_t sampleIndex;
-  int32_t fractionalSampleIndex;
-  int16_t stepIndex;
-  int16_t nextIndex;
-  int32_t kickDelay;
-  int16_t currentVelocity;
-  float gain;
-  float currentFilter;  
-  float filterAlpha;
-  int32_t totalDetune;
-  int32_t freqIncrement;
+  sample_t *currentSample;   // pointer to current sample
+  int32_t sampleIndex; // current sample index
+  int32_t fractionalSampleIndex; // in fractional samples (1/32768)
+  int16_t stepIndex; // current step index
+  int16_t nextIndex; // next step index
+  int32_t kickDelay; // pre-delay in samples
+  int16_t currentVelocity; // velocity for this step
+  float totalGain; // product of channel gain, step velocity and sample gain
+  float channelGain; // gain for this channel
+  float currentFilter; // current filter value
+  float filterAlpha; // filter alpha value
+  int32_t totalDetune; // total detune for this channel (sum of channel and sample detune)
+  int32_t freqIncrement; // frequency increment for the sample (32768.0 is a frequency of 1.0)
 } mixData_t;
 
 typedef struct previewData_t

@@ -327,7 +327,8 @@ void setPlayMode(DrumMachine &dm, int mode)
     }
     if (mode == PLAY_MODE_PREVIEW)
     {
-        setGraphicsModePreview();
+        
+        initPreviewMode();
     }
     if (mode == PLAY_MODE_HELP)
     {

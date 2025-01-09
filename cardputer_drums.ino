@@ -22,18 +22,25 @@
 
 // TODO:
 
-// live recording
+// chiptunes kits
 // CHESNEY HAWKES MODE
-// waveform render for samples in preview mode and slicer
+// better  filter cutoff settings
+// beat slicer?
+// fix glitching loaded samples (probably scratch buffer)
 // fix pattern switch visual sync (off by 1/2 bar)
-// banks for kit save / better error messages
-// add filter cutoff to preview UI/editor / trim / waveform display
-// Loop samples / trim samples
+// better error messages etc. for kit load/save
+// Loop samples 
 // flams: double flam, triple flam, roll, reverse
 // UI for step and channel tuning
-// save/load sample adjustments in kits
+// allow blank samples to change volume/pitch
+// add stop note sample/step ('#')
+// add glide for pitch?
+
 
 // maybe:
+
+// live recording
+// bluetooth audio (see: https://github.com/pschatzmann/ESP32-A2DP)
 // chords in kits
 // kit editor
 // basic undo
@@ -86,15 +93,17 @@ void splash()
 
 
   auto splashSprite = M5Cardputer.Display; 
-  splashSprite.clearDisplay(TFT_DARKGREY); 
+  splashSprite.clearDisplay(TFT_RED); 
 
   splashSprite.setFont(&fonts::FreeMonoBold18pt7b);
   splashSprite.setTextDatum(top_center);
   splashSprite.setTextColor(TFT_BLACK);
-  splashSprite.drawString("BonnetHead", M5Cardputer.Display.width() / 2 + 1, M5Cardputer.Display.height() / 2 - 50 + 1);
-
+  for(int i=-1;i<2;i++)
+    for(int j=-1;j<2;j++)
+    splashSprite.drawString("BONNETHEAD", M5Cardputer.Display.width() / 2 + i, M5Cardputer.Display.height() / 2 - 50 + j);
+  
   splashSprite.setTextColor(TFT_LIGHTGREY);
-  splashSprite.drawString("BonnetHead", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 - 50);
+  splashSprite.drawString("BONNETHEAD", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 - 50);
   
   splashSprite.setFont(&fonts::Font0);
   splashSprite.setTextColor(TFT_BLACK);

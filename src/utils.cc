@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Note: this is statically allocated as dynamic allocation leads to
+// fragmentation and a much smaller total possible sample buffer
 char arenaBuffer[SAMPLE_ARENA_SIZE]; // the actual global arena buffer
 
 void createArena(arena_t *arena)
@@ -68,16 +70,24 @@ int16_t getDigitPressed(Keyboard_Class::KeysState status)
   return getKeyIndex(digitChars);
 }
 
-float iirAlpha(int sr, float freq)
-{  
-  float wc = 2 * M_PI * freq / sr;
-  return exp(-wc);
+float iirAlpha(float normFreq)
+{    
+  Serial.printf("IIR alpha: %f\n", normFreq);
+  float wc = 2 * M_PI * normFreq;
+  float alpha = exp(-wc);  
+  return alpha;
 }
 
 float halfLifeTime(int sr, float t)
 {
   
   return exp(-log(2.0) / ((float)t * (float)sr + 0.0f));
+}
+
+// Convert centibel to a gain
+float cBGain(float cb)
+{
+  return powf(10.0f, cb / 200.0f);
 }
 
   void lowerMessage(const char *message)

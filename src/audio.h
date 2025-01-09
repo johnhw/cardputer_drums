@@ -21,4 +21,5 @@ void clearSamples(DrumMachine &dm);
 void allocSamples(DrumMachine &dm);
 void recalcBPM(DrumMachine &dm);
 
+
 #endif 

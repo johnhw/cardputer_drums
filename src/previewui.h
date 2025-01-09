@@ -13,7 +13,7 @@ void prevKitParam(DrumMachine &dm);
 void nextKitParam(DrumMachine &dm);
 void adjustKitParam(DrumMachine &dm, int scaleMode, int adj);
 void resetKitParam(DrumMachine &dm);
-
+void initPreviewMode(DrumMachine &dm);
 
 enum PARAMS 
 {
@@ -29,6 +29,22 @@ enum PARAMS
     PARAM_SUSTAIN_LEVEL,
     PARAM_RELEASE_TIME,
     PARAM_N
+};
+
+#define MAX_SAMPLE_ADJUST 64000
+
+const int32_t paramLimits[PARAM_N][2] = {
+    {-2400, 2400}, // detune
+    {-2000, 2000}, // volume    
+    {0, 2000}, // cutoff
+    {-MAX_SAMPLE_ADJUST, MAX_SAMPLE_ADJUST}, // trim start
+    {0, MAX_SAMPLE_ADJUST}, // trim end
+    {0, MAX_SAMPLE_ADJUST}, // loop start
+    {0, MAX_SAMPLE_ADJUST}, // loop end
+    {0, 5000}, // attack
+    {0, 5000}, // decay
+    {0, 1000}, // sustain
+    {0, 5000} // release
 };
 
 const String paramNames [] = {

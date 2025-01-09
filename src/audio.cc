@@ -136,21 +136,26 @@ void previewSample(DrumMachine &dm, sample_t *preview)
     int32_t totalDetune = preview->adjustments.detune;
     int32_t freqInc = freqIncrement(totalDetune);
     int32_t sampleIndex = 0;
-    int32_t fractionalSampleIndex = 0;
+    int32_t fractionalSampleIndex = freqInc * preview->adjustments.trimStart;
     int32_t len = preview->len;
+    int32_t end = len - preview->adjustments.trimEnd;
     int32_t out;
-    float gain = 1.0;
+    float sampleCutoff = 0.5 - (preview->adjustments.cutoff / 2000.0);
+    float alpha = iirAlpha(sampleCutoff);
+    float filter = 0.0f;
+    float gain = cBGain(preview->adjustments.volume);
     for (int i = 0; i < dm.waveBufferLen; i++)
     {
-        if (sampleIndex >= len)
+        if (sampleIndex >= len || sampleIndex >= end || sampleIndex < 0)
         {
-            dm.audioBuffers[0][i] = 0;
-            break;
+            dm.audioBuffers[0][i] = 0;            
+            continue;
         }
         float in = preview->samples[sampleIndex] * gain;
         fractionalSampleIndex += freqInc;
         sampleIndex = fractionalSampleIndex / 32768;
-        out = in;
+        filter = alpha * filter + (1.0f - alpha) * in;
+        out = filter;
         if (out > 32767)
             out = 32767;
         if (out < -32767)
@@ -173,13 +178,13 @@ void resetMix(DrumMachine &dm)
         mixData[chan].stepIndex = -1;
         mixData[chan].nextIndex = -1;
         mixData[chan].kickDelay = 0;
-        mixData[chan].gain = powf(1.4142, (dm.channels[chan].volume - 8));
+        mixData[chan].channelGain = powf(1.4142, (dm.channels[chan].volume - 8));
+        mixData[chan].totalGain = 0.0f; // will be set by the first sample
         mixData[chan].currentVelocity = 0;
         mixData[chan].currentFilter = 0.0f;
-        if (dm.channels[chan].filterCutoff == 0)
-            mixData[chan].filterAlpha = 0.0f;
-        else
-            mixData[chan].filterAlpha = iirAlpha(samplerate, (maxFilterCutoff - dm.channels[chan].filterCutoff) * samplerate / (maxFilterCutoff * 8));
+        mixData[chan].filterAlpha = 0.0f;
+
+        
     }
 }
 
@@ -222,28 +227,38 @@ void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer)
                 if (newSample != nullptr) // cutoff if there's a new sample to start (do nothing otherwise)
                 {
                     mixData[chan].sampleIndex = 0;
-                    mixData[chan].fractionalSampleIndex = 0;
+                    
                     mixData[chan].currentSample = newSample;
                     // add cumulative detune from the sample itself, and the channel tuning
                     mixData[chan].totalDetune += newSample->adjustments.detune + dm.channels[chan].detune;
                     mixData[chan].freqIncrement = freqIncrement(mixData[chan].totalDetune); // compute the actual step increment
+                    mixData[chan].fractionalSampleIndex = mixData[chan].freqIncrement * newSample->adjustments.trimStart; 
+                    // gain is product of channel gain, step velocity and sample gain
+                    mixData[chan].totalGain = mixData[chan].channelGain * mixData[chan].currentVelocity * cBGain(newSample->adjustments.volume);
+
+                    // sample cutoff is min of channel and sample cutoff
+                    float channelCutoff = (maxFilterCutoff - dm.channels[chan].filterCutoff) / maxFilterCutoff;
+                    float sampleCutoff = (0.5 - newSample->adjustments.cutoff / 2000.0);
+                    float cutoff = min(channelCutoff, sampleCutoff);
+                    mixData[chan].filterAlpha = iirAlpha(cutoff);
                 }
             }
             mixData[chan].kickDelay--;
 
             // copy in the sample, if there's more to copy
             if (mixData[chan].currentSample && mixData[chan].currentSample->len != 0)
-            {
-                
-                float in = mixData[chan].currentSample->samples[mixData[chan].sampleIndex] * mixData[chan].gain;
-
+            {                            
                 mixData[chan].fractionalSampleIndex += mixData[chan].freqIncrement;
                 mixData[chan].sampleIndex = mixData[chan].fractionalSampleIndex / 32768;
+                float in = 0.0f;
+                if(mixData[chan].sampleIndex >= 0) // skip if we have a negative index (delayed start)                
+                    in = mixData[chan].currentSample->samples[mixData[chan].sampleIndex] * mixData[chan].totalGain;
                 mixData[chan].currentFilter = mixData[chan].filterAlpha * mixData[chan].currentFilter + (1.0f - mixData[chan].filterAlpha) * in;
-                out += mixData[chan].currentVelocity * mixData[chan].currentFilter;
 
+                out +=  mixData[chan].currentFilter;
                 // overran the sample, so stop
-                if (mixData[chan].sampleIndex >= mixData[chan].currentSample->len)
+                int32_t trimmedEnd = mixData[chan].currentSample->len - mixData[chan].currentSample->adjustments.trimEnd;
+                if (mixData[chan].sampleIndex >= mixData[chan].currentSample->len || mixData[chan].sampleIndex >= trimmedEnd)
                 {
                     mixData[chan].currentSample = nullptr;
                 }

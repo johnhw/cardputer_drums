@@ -14,10 +14,9 @@ static constexpr const int16_t maxFilterCutoff = 16; // number of steps in the f
 static constexpr const int16_t maxChannelVolume = 16; // number of steps in the channel volume setting
 static constexpr const float maxSampleLen = 0.5; // maximum length in seconds of a sample
 static constexpr const int32_t SAMPLE_ARENA_SIZE = 160000; // number of samples in the kit arena (all samples are consecutive slices of this)
-
 static constexpr const int32_t bufferBeats = 8; // division of a bar in one audio buffer (4 = 1/4 bar)
 
-const String VERSION = "1.0.2";
+const String VERSION = "1.0.3";
 const String basePathPattern = "/bonnethead/patterns"; // paths in the filesystem to save/load from
 const String basePathKits = "/bonnethead/kits"; 
 const String basePathSamples =  "/bonnethead/samples"; 

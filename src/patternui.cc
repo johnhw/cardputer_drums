@@ -482,7 +482,7 @@ void patternModeKeys(DrumMachine &dm)
     // shift-press for fill
     int8_t shiftDigit = getKeyIndex(")!@#$%^&*(ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     // note: backspace appears as shift-8!
-    if (shiftDigit >= 0 && !M5Cardputer.Keyboard.isKeyPressed(KEY_BACKSPACE))
+    if (shiftDigit >= 0 && !M5Cardputer.Keyboard.isKeyPressed(KEY_BACKSPACE) && !M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER))
     {
 
       dm.fillPattern = shiftDigit;
@@ -899,6 +899,8 @@ void patternModeKeys(DrumMachine &dm)
     dm.cursor.chan = oldChan;
     dm.cursor.dirty = 1;
     drawChannelBars(dm);
+    drawStatus(dm);
+    drawTopLine(dm);
   }
 
   // normal pattern mode
