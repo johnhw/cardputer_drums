@@ -251,9 +251,10 @@ void tapTempo(DrumMachine &dm)
   lowerMessage(msg.c_str());
 }
 
-void noModifierKey(DrumMachine &dm)
+void noModifierKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
-  Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
+  
+  
   // set characters for sample entry
   if (status.del)
   {
@@ -272,6 +273,11 @@ void noModifierKey(DrumMachine &dm)
 
       setCursorVel(dm, status.word[0]);
     }
+  }
+  // fx
+  if(M5Cardputer.Keyboard.isKeyPressed(KEY_TAB))
+  {
+    cycleCursorFX(dm);
   }
 
   // tap tempo
@@ -303,14 +309,7 @@ void noModifierKey(DrumMachine &dm)
   if (M5Cardputer.Keyboard.isKeyPressed('}'))
     adjChanKick(dm, 1);
 
-  if (M5Cardputer.Keyboard.isKeyPressed('='))
-    adjChanFilter(dm, -1);
-  if (M5Cardputer.Keyboard.isKeyPressed('-'))
-    adjChanFilter(dm, 1);
-  if (M5Cardputer.Keyboard.isKeyPressed('\\'))
-    adjChanVolume(dm, 1);
-  if (M5Cardputer.Keyboard.isKeyPressed('\''))
-    adjChanVolume(dm, -1);
+
 }
 
 void loadBank(DrumMachine &dm, int16_t bank)
@@ -345,10 +344,13 @@ void saveBank(DrumMachine &dm, int16_t bank)
   }
 }
 
+void ctrlKey(DrumMachine &dm, Keyboard_Class::KeysState status)
+{
+  // transpose functions
+}
+
 void patternModeKeys(DrumMachine &dm)
 {
-
-
 
   // preview mode
   if (M5Cardputer.BtnA.wasClicked())
@@ -364,7 +366,7 @@ void patternModeKeys(DrumMachine &dm)
     {
       Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
 
-
+      
     // if bank action pending, get the bank key
     // and perform the action
       if(dm.bankAction!=ACTION_NONE)
@@ -386,27 +388,33 @@ void patternModeKeys(DrumMachine &dm)
           return; // don't process any other keys
       }
 
+      // transpose keys
+      if(status.ctrl)
+      {
+        ctrlKey(dm, status);
+        return;
+      }
       // kit select
       if (status.alt)
       {
         altKey(dm, status);
+        return;
       }
+      // pattern operations
       if (status.opt)
       {
         optKey(dm, status);
+        return;
       }
-      else
+      // function keys
+      if (status.fn)
       {
-        // function mode
-        if (status.fn)
-        {
-          fnKey(dm, status);
-        }
-        else
-        {
-          noModifierKey(dm);
-        }
+        fnKey(dm, status);
+        return;
       }
+      // edit keys
+      noModifierKey(dm, status);
+      return;
     }
   }
 }
@@ -558,6 +566,16 @@ void patternModeKeys(DrumMachine &dm)
       adjVolume(dm, -1);
     if (M5Cardputer.Keyboard.isKeyPressed(']'))
       adjVolume(dm, 1);
+
+    if (M5Cardputer.Keyboard.isKeyPressed('='))
+      adjChanFilter(dm, -1);
+    if (M5Cardputer.Keyboard.isKeyPressed('-'))
+      adjChanFilter(dm, 1);
+    if (M5Cardputer.Keyboard.isKeyPressed('\\'))
+      adjChanVolume(dm, 1);
+    if (M5Cardputer.Keyboard.isKeyPressed('\''))
+      adjChanVolume(dm, -1);
+
     if (M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER))
       toggleSolo(dm, dm.cursor.chan);
 
@@ -782,9 +800,15 @@ void patternModeKeys(DrumMachine &dm)
       String man;
       M5Cardputer.Display.fillRect(100, 3, 200, 10, TFT_BLACK); // clear the area
       M5Cardputer.Display.setFont(&fonts::Font0);
-      M5Cardputer.Display.setTextColor(GREEN);      
-      man = ASCIIDance[step  / 2];
-      M5Cardputer.Display.drawString(man.c_str(), 150, 3);
+      M5Cardputer.Display.setTextColor(GREEN);  
+
+      int32_t animFrame = step / 2;
+      if(animFrame>=8)
+        animFrame = 7;
+
+      man = ASCIIDance[animFrame];
+      int32_t yOffset = 2 * animFrame % 2;
+      M5Cardputer.Display.drawString(man.c_str(), 150, 3+yOffset);
 
       // reset the font
       M5Cardputer.Display.setTextColor(WHITE);
@@ -898,6 +922,13 @@ void patternModeKeys(DrumMachine &dm)
     dm.cursor.step = oldStep;
     dm.cursor.chan = oldChan;
     dm.cursor.dirty = 1;
+    drawChannelBars(dm);
+    drawStatus(dm);
+    drawTopLine(dm);
+  }
+
+  void patternRefresh(DrumMachine & dm)
+  {
     drawChannelBars(dm);
     drawStatus(dm);
     drawTopLine(dm);

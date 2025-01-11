@@ -24,15 +24,15 @@
 
 // chiptunes kits
 // CHESNEY HAWKES MODE
-// fix card info for filter/volume keys
-// beat slicer?
+
+// beat slicer? // audio recording
 // fix pattern switch visual sync (off by 1/2 bar)
 // better error messages etc. for kit load/save
-// Loop samples 
-// flams: double flam, triple flam, roll, reverse
+// Loop samples: unify preview. Add envelopes. Better loop boolean (add to adjustments)
+// flams: double flam, triple flam, roll, reverse. Key, UI, audio rendering
 // UI for step and channel tuning
 // allow blank samples to change volume/pitch
-// add stop note sample/step ('#')
+// add stop note sample/step ('#') (trigger release)
 // add glide for pitch?
 
 
@@ -58,6 +58,7 @@
 #include "src/patternui.h"
 #include "src/previewui.h"
 #include "src/flash.h"
+#include "data/routed_7.h"
 
 // Function Declarations
 void initCardputer();
@@ -92,22 +93,24 @@ void splash()
 
 
   auto splashSprite = M5Cardputer.Display; 
-  splashSprite.clearDisplay(TFT_RED); 
+  splashSprite.clearDisplay(TFT_WHITE); 
 
-  splashSprite.setFont(&fonts::FreeMonoBold18pt7b);
+  splashSprite.setFont(&fonts::Orbitron_Light_24);
   splashSprite.setTextDatum(top_center);
   splashSprite.setTextColor(TFT_BLACK);
-  for(int i=-1;i<2;i++)
-    for(int j=-1;j<2;j++)
-    splashSprite.drawString("BONNETHEAD", M5Cardputer.Display.width() / 2 + i, M5Cardputer.Display.height() / 2 - 50 + j);
+  // for(int i=-1;i<2;i++)
+  //   for(int j=-1;j<2;j++)
+  //   splashSprite.drawString("BONNETHEAD", M5Cardputer.Display.width() / 2 + i, M5Cardputer.Display.height() / 2 - 50 + j);
   
-  splashSprite.setTextColor(TFT_LIGHTGREY);
+  // splashSprite.setTextColor(TFT_LIGHTGREY);
   splashSprite.drawString("BONNETHEAD", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 - 50);
   
-  splashSprite.setFont(&fonts::Font0);
+  
+  splashSprite.loadFont(font_vlw_routed_7);
   splashSprite.setTextColor(TFT_BLACK);
+  
   splashSprite.drawString(VERSION, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 - 20 );
-
+  splashSprite.setFont(&fonts::Font0);
   // draw a rectangle for the lower text
   splashSprite.fillRect(0, M5Cardputer.Display.height() / 2 + 45, M5Cardputer.Display.width(), 55, RGB565(0,0,0));
   // draw text in small font below  

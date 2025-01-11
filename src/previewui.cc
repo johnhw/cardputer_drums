@@ -367,6 +367,15 @@ void renderWaveform(sample_t *sample, int32_t baseY)
   int32_t end = baseX + actualEnd * width / len;
   M5Cardputer.Display.drawLine(start, baseY - height, start, baseY + height, TFT_RED);
   M5Cardputer.Display.drawLine(end, baseY - height, end, baseY + height, TFT_RED);
+
+  bool isLoop = sample->adjustments.loopEnd!=0 && sample->adjustments.loopStart!=0;
+  if(isLoop)
+  {
+    int32_t loopStart = baseX + sample->adjustments.loopStart * width / len;
+    int32_t loopEnd = baseX + (len - sample->adjustments.loopEnd) * width / len;
+    M5Cardputer.Display.drawLine(loopStart, baseY - height, loopStart, baseY + height, TFT_CYAN);
+    M5Cardputer.Display.drawLine(loopEnd, baseY - height, loopEnd, baseY + height, TFT_CYAN);
+  }
 }
 
 void redrawPreview(DrumMachine &dm)

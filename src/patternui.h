@@ -27,6 +27,8 @@ void adjChanVolume(DrumMachine &dm, int adj);
 void checkLiveDelete(DrumMachine &dm);  
 void loadBank(DrumMachine &dm, int16_t bank);
 void saveBank(DrumMachine &dm, int16_t bank);
+void patternRefresh(DrumMachine & dm);
 
-
+void noModifierKey(DrumMachine &dm, Keyboard_Class::KeysState status);
+void altKey(DrumMachine &dm, Keyboard_Class::KeysState status);
 #endif

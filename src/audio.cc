@@ -123,6 +123,9 @@ void previewSample(DrumMachine &dm, sample_t *preview)
     int32_t fractionalSampleIndex = freqInc * preview->adjustments.trimStart;
     int32_t len = preview->len;
     int32_t end = len - preview->adjustments.trimEnd;
+    int32_t loopEnd = len - preview->adjustments.loopEnd;
+    int32_t loopStart = preview->adjustments.loopStart;
+    bool loop = loopEnd > loopStart;
     int32_t out;
     float sampleCutoff = 1 - (preview->adjustments.cutoff / 1000.0);
     float alpha = iirAlpha(sampleCutoff * sampleCutoff);
@@ -130,11 +133,16 @@ void previewSample(DrumMachine &dm, sample_t *preview)
     float gain = cBGain(preview->adjustments.volume);
     for (int i = 0; i < dm.waveBufferLen; i++)
     {
+        if(loop && sampleIndex >= loopEnd)
+        {
+            sampleIndex = loopStart;
+        }                 
         if (sampleIndex >= len || sampleIndex >= end || sampleIndex < 0)
         {
             dm.audioBuffers[0][i] = 0;            
             continue;
         }
+    
         float in = preview->samples[sampleIndex] * gain;
         fractionalSampleIndex += freqInc;
         sampleIndex = fractionalSampleIndex / 32768;
@@ -149,6 +157,8 @@ void previewSample(DrumMachine &dm, sample_t *preview)
     M5Cardputer.Speaker.playRaw(dm.audioBuffers[0], len, samplerate, false, 1, 0);
 }
 
+// called at the start of a pattern to reset the mix data
+// for all channels
 void resetMix(DrumMachine &dm)
 {
     int chan;
@@ -166,12 +176,11 @@ void resetMix(DrumMachine &dm)
         mixData[chan].totalGain = 0.0f; // will be set by the first sample
         mixData[chan].currentVelocity = 0;
         mixData[chan].currentFilter = 0.0f;
-        mixData[chan].filterAlpha = 0.0f;
-
-        
+        mixData[chan].filterAlpha = 0.0f;        
     }
 }
 
+// mix (part of) a pattern into the available buffer
 void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer)
 {
     int chan, j;
@@ -243,6 +252,15 @@ void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer)
                 out +=  mixData[chan].currentFilter;
                 // overran the sample, so stop
                 int32_t trimmedEnd = mixData[chan].currentSample->len - mixData[chan].currentSample->adjustments.trimEnd;
+
+                // loop if needed
+                int32_t loopEnd = mixData[chan].currentSample->len - mixData[chan].currentSample->adjustments.loopEnd;
+                int32_t loopStart = mixData[chan].currentSample->adjustments.loopStart;
+                if(loopEnd>loopStart && mixData[chan].sampleIndex >= loopEnd && mixData[chan].currentSample->adjustments.loopEnd!=0 && mixData[chan].currentSample->adjustments.loopStart!=0)
+                {
+                    mixData[chan].fractionalSampleIndex = mixData[chan].freqIncrement * loopStart;
+                }
+
                 if (mixData[chan].sampleIndex >= mixData[chan].currentSample->len || mixData[chan].sampleIndex >= trimmedEnd)
                 {
                     mixData[chan].currentSample = nullptr;

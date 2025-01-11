@@ -25,6 +25,6 @@ void getStep(DrumMachine& dm, int16_t step, int16_t chan, sample_t *&sample, int
 void getDetune(DrumMachine &dm, int16_t step, int16_t chan, int32_t &detune);
 void rotateChannelLeft(DrumMachine &dm);
 void rotateChannelRight(DrumMachine &dm);
-
+void cycleCursorFX(DrumMachine &dm);
 
 #endif

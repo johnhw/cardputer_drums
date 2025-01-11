@@ -28,6 +28,7 @@ typedef struct sample_adjustment_t
   int32_t decayTime = 0; // decay time in ms
   int32_t sustainLevel = 0; // sustain level in 1/100th of a dB
   int32_t releaseTime = 0; // release time in ms
+  bool loopEnabled = false; // loop enabled
 } sample_adjustment_t;
 
 // a sample, with PCM data, length and a frequency
@@ -39,10 +40,11 @@ typedef struct sample_t
 } sample_t;
 
 enum FX {
-  FX_NONE=0,
-  FX_FLAM=1,
-  FX_ROLL=2,
-  FX_REVERSE=3,  
+  FX_NONE,
+  FX_FLAM,
+  FX_ROLL,
+  FX_REVERSE,  
+  FX_N
 };
 
 // one step of a channel

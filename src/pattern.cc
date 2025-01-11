@@ -118,6 +118,16 @@ void setCursorChar(DrumMachine &dm, char c)
     updateMix(dm, dm.cursor.step, dm.cursor.chan);
 }
 
+// step through possible FX values for this step
+void cycleCursorFX(DrumMachine &dm)
+{
+    int index = dm.cursor.step + nSteps * dm.cursor.chan;
+    dm.currentPattern[index].fx++;
+    if (dm.currentPattern[index].fx >= FX_N)
+        dm.currentPattern[index].fx = 0;
+    updateMix(dm, dm.cursor.step, dm.cursor.chan);
+}
+
 void rotateChannelLeft(DrumMachine &dm)
 {
     int i;
