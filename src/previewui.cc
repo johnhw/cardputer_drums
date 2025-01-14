@@ -139,65 +139,77 @@ void previewModeKeys(DrumMachine &dm)
       {
         // function keys (load/save etc.)
         previewFnKey(dm, status);
+        return;
       }
-      else
+
+      // tuned playback
+      if (status.ctrl)
       {
-        if (status.word.size() > 0)
-        {
-          if (isalpha(status.word[0]))
-          {
-            previewSample(dm, status.word[0]);
-          }
-        }
+        int32_t detune = getKeyboardPianoCents();
+        if (detune >= 0)
+          dm.previewData.detune = detune - 1200;
+        else
+          return; // no key pressed
+        previewSample(dm, dm.previewData.lastSample);
+        dm.previewData.detune = 0;
+        return;
+      }
 
-        if (M5Cardputer.Keyboard.isKeyPressed(' '))
+      if (status.word.size() > 0)
+      {
+        if (isalpha(status.word[0]))
         {
+          previewSample(dm, status.word[0]);
+        }
+      }
 
-          resetKitParam(dm);
-        }
+      if (M5Cardputer.Keyboard.isKeyPressed(' '))
+      {
 
-        // check for scale mode
-        int16_t scaleMode = SCALE_NORMAL;
+        resetKitParam(dm);
+      }
 
-        // check if alt down = fine
-        if (status.alt && !status.opt)
-        {
-          scaleMode = SCALE_FINE;
-        }
+      // check for scale mode
+      int16_t scaleMode = SCALE_NORMAL;
 
-        // opt = coarse
-        if (status.opt && !status.alt)
-        {
-          scaleMode = SCALE_COARSE;
-        }
+      // check if alt down = fine
+      if (status.alt && !status.opt)
+      {
+        scaleMode = SCALE_FINE;
+      }
 
-        // opt+alt = extra coarse
-        if (status.alt && status.opt)
-        {
-          scaleMode = SCALE_EXTRA_COARSE;
-        }
+      // opt = coarse
+      if (status.opt && !status.alt)
+      {
+        scaleMode = SCALE_COARSE;
+      }
 
-        // Param adjustment
-        if (M5Cardputer.Keyboard.isKeyPressed(';'))
-        {
-          adjustKitParam(dm, scaleMode, 1);
-        }
-        if (M5Cardputer.Keyboard.isKeyPressed('.'))
-        {
-          adjustKitParam(dm, scaleMode, -1);
-        }
-        if (M5Cardputer.Keyboard.isKeyPressed(','))
-        {
-          prevKitParam(dm);
-          dm.previewData.previewDirty = true;
-          redrawPreview(dm);
-        }
-        if (M5Cardputer.Keyboard.isKeyPressed('/'))
-        {
-          nextKitParam(dm);
-          dm.previewData.previewDirty = true;
-          redrawPreview(dm);
-        }
+      // opt+alt = extra coarse
+      if (status.alt && status.opt)
+      {
+        scaleMode = SCALE_EXTRA_COARSE;
+      }
+
+      // Param adjustment
+      if (M5Cardputer.Keyboard.isKeyPressed(';'))
+      {
+        adjustKitParam(dm, scaleMode, 1);
+      }
+      if (M5Cardputer.Keyboard.isKeyPressed('.'))
+      {
+        adjustKitParam(dm, scaleMode, -1);
+      }
+      if (M5Cardputer.Keyboard.isKeyPressed(','))
+      {
+        prevKitParam(dm);
+        dm.previewData.previewDirty = true;
+        redrawPreview(dm);
+      }
+      if (M5Cardputer.Keyboard.isKeyPressed('/'))
+      {
+        nextKitParam(dm);
+        dm.previewData.previewDirty = true;
+        redrawPreview(dm);
       }
     }
   }
@@ -269,16 +281,14 @@ void setKitParamValue(DrumMachine &dm, int32_t param, char sample, int32_t value
   if (value > paramLimits[param][1])
     value = paramLimits[param][1];
 
-
-
   if (!samplePtr)
   {
     return;
   }
 
-    // limit loop
-    if (param == PARAM_LOOP_START || param == PARAM_LOOP_END)
-    {
+  // limit loop
+  if (param == PARAM_LOOP_START || param == PARAM_LOOP_END)
+  {
     if (value < 0)
       value = 0;
     if (value > samplePtr->len)
@@ -288,11 +298,11 @@ void setKitParamValue(DrumMachine &dm, int32_t param, char sample, int32_t value
     // set looping to enabled when loopStart != loopEnd
     if (samplePtr->adjustments.loopStart != 0 && samplePtr->adjustments.loopEnd != 0)
       samplePtr->adjustments.loopEnabled = true;
-    }
+  }
 
-    switch (param)
-    {
-    case PARAM_DETUNE:
+  switch (param)
+  {
+  case PARAM_DETUNE:
     samplePtr->adjustments.detune = value;
     break;
   case PARAM_VOLUME:
@@ -334,15 +344,15 @@ void playPreviewSample(DrumMachine &dm, char sample)
 {
   sample_t *samplePtr;
   if (sample != dm.previewData.lastSample)
-    dm.previewData.previewDirty = true;  
-  
+    dm.previewData.previewDirty = true;
+
   samplePtr = getSample(dm, sample);
   if (samplePtr && samplePtr->len > 0)
   {
     // force the buffer to be flushed to reduce latency
     dm.previewData.lastSample = sample;
     resetAudioPlayback(dm);
-    triggerPreviewSample(dm, sample);  
+    triggerPreviewSample(dm, sample);
   }
   else
   {
@@ -413,15 +423,14 @@ void redrawPreview(DrumMachine &dm)
   preview[0] = sample;
   M5Cardputer.Display.clearDisplay(TFT_DARKGREY);
 
-  if(sample<='`') return;
+  if (sample <= '`')
+    return;
   M5Cardputer.Display.setTextColor(WHITE);
   M5Cardputer.Display.setFont(&fonts::FreeMonoBold24pt7b);
   M5Cardputer.Display.setTextColor(BLACK);
   M5Cardputer.Display.drawString(preview, M5Cardputer.Display.width() / 2 + 1, M5Cardputer.Display.height() / 2 - 60 + 1);
   M5Cardputer.Display.setTextColor(WHITE);
   M5Cardputer.Display.drawString(preview, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 - 60);
-
-  
 
   String currentParam, nextParam, prevParam;
   int32_t prevIndex, currentIndex, nextIndex;

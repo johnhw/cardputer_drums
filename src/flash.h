@@ -10,14 +10,14 @@
 // functions for SPIFFS file system
 void littlefsError(char *msg);
 bool loadFile(const String &path, String &content);
-bool saveFile(const String &path, const String &content) ;
+bool saveFile(const String &path, const String &content);
 std::vector<String> listFiles(const String &path);
 bool initLittleFS();
 std::vector<String> filterByPrefix(const std::vector<String> &input, const String &prefix);
 bool initSD();
 bool createDirIfNotExistsSD(const String path);
 bool openWAVToSD(String fname, int32_t samplerate);
-bool appendWAVToSD(String fname, int16_t* audioData, size_t length);
+bool appendWAVToSD(String fname, int16_t *audioData, size_t length);
 bool backpatchWAVToSD(String fname);
 bool validateWavHeader(byte *buffer);
 String findFreeRenderFilenameSD();
@@ -27,4 +27,4 @@ bool loadKitSD(const String &path, DrumMachine &dm);
 
 bool loadFont(M5GFX display, const String &path);
 
-#endif 
+#endif

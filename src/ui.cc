@@ -12,7 +12,7 @@
 #include "ui.h"
 #include <LittleFS.h>
 
-/* Render the whole pattern (or pattern sequence) to 
+/* Render the whole pattern (or pattern sequence) to
 the next available WAV file on the SD card */
 bool renderPattern(DrumMachine &dm)
 {
@@ -25,7 +25,7 @@ bool renderPattern(DrumMachine &dm)
 
     lowerMessage(msg.c_str());
     bool success = renderToSD(dm, fname);
-    
+
     if (!success)
     {
         msg = "Failed to render";
@@ -40,15 +40,14 @@ void updatePattern(DrumMachine &dm)
 {
     recalcBPM(dm);
     recalcChannels(dm);
-    if(!dm.splashFlag)
-    {     
+    if (!dm.splashFlag)
+    {
         setGraphicsModePattern();
         redrawPattern(dm);
         drawStatus(dm);
     }
     requestMix(dm);
 }
-
 
 void initCursor(cursor_t &cursor)
 {
@@ -100,7 +99,7 @@ bool loadDrumMachine(DrumMachine &dm, String &fname)
     if (!success)
     {
         Serial.println("Failed to deserialize");
-        
+
         return false;
     }
     reinitState(dm);
@@ -111,10 +110,10 @@ bool loadDrumMachine(DrumMachine &dm, String &fname)
         setKit(dm, oldKit);
     }
 
-    if(dm.splashFlag)
+    if (dm.splashFlag)
     {
         dm.splashFlag = 0;
-        updatePattern(dm);       
+        updatePattern(dm);
     }
     return true;
 }
@@ -127,14 +126,13 @@ void initState(DrumMachine &dm)
     allocateMix(dm);
     Serial.println("Allocated mix buffers");
 
-    // print free heap space    
-    
+    // print free heap space
+
     dm.kit = -1;          // set to -1 so we always set the kit
                           // Create the drum samples
     dm.nKits = nDrumKits; // initialize the number of kits (defined in kits.h)
     dm.splashFlag = true;
 }
-
 
 // reset the state
 void resetState(DrumMachine &dm)
@@ -177,7 +175,6 @@ void resetState(DrumMachine &dm)
     recalcBPM(dm);
     recalcChannels(dm);
 
-    
     // Clear all patterns
     for (int i = 0; i < maxPatterns; i++)
     {
@@ -191,7 +188,7 @@ void resetState(DrumMachine &dm)
 
     // Draw the initial cursor position
     drawCursor(dm, 1);
-    
+
     // Update the pattern
     updatePattern(dm);
 }
@@ -205,7 +202,7 @@ void setKit(DrumMachine &dm, int kit)
     int oldKit = dm.kit;
     dm.kit = kit;
     // is this a base kit? resynth the samples
-    if(dm.kit < nDrumKits)
+    if (dm.kit < nDrumKits)
     {
         synthKitSamples(dm, drumKits[dm.kit]);
         requestMix(dm);
@@ -213,12 +210,12 @@ void setKit(DrumMachine &dm, int kit)
     }
 
     // try loading a cached kit from the SD card
-    String kitName = basePathKits + "/" + "base-" + (kit+1) + ".kit";
-    
+    String kitName = basePathKits + "/" + "base-" + (kit + 1) + ".kit";
+
     bool success = loadKitSD(kitName, dm);
-    if(!success)
+    if (!success)
     {
-        if(dm.kit != oldKit)
+        if (dm.kit != oldKit)
         {
             setKit(dm, oldKit);
         }
@@ -231,7 +228,7 @@ void setKit(DrumMachine &dm, int kit)
 
 void updateMix(DrumMachine &dm, int16_t step, int16_t chan)
 {
-    // for now, just mix the whole pattern    
+    // for now, just mix the whole pattern
     dm.syncMix = 1; // flag to update on next loop
 }
 
@@ -265,7 +262,7 @@ void nextPattern(DrumMachine &dm)
         drawTopLine(dm);
     }
 
-    if(dm.fillPattern>0)
+    if (dm.fillPattern > 0)
     {
         // positive, switch to the fill pattern
         dm.lastPatternBeforeFill = dm.pattern;
@@ -275,8 +272,7 @@ void nextPattern(DrumMachine &dm)
         updatePattern(dm);
         return;
     }
- 
-    
+
     // If we are in the sequence mode, and there is a sequence
     // then advance to the next pattern in the sequence
     if (dm.patternMode == 1 && strlen(dm.patternSequence) > 0)
@@ -293,7 +289,7 @@ void nextPattern(DrumMachine &dm)
     else
     {
         // restore where we were before the fill
-        if(dm.lastPatternBeforeFill>0)
+        if (dm.lastPatternBeforeFill > 0)
         {
             pattern = dm.lastPatternBeforeFill;
             dm.lastPatternBeforeFill = 0;
@@ -322,14 +318,14 @@ void setPlayMode(DrumMachine &dm, int mode)
     dm.playMode = mode;
     resetAudioPlayback(dm);
     if (mode == PLAY_MODE_PATTERN)
-    {                
+    {
         updatePattern(dm);
         // force a mix
         feedPatternBuffers(dm);
     }
     if (mode == PLAY_MODE_PREVIEW)
     {
-        
+
         initPreviewMode(dm);
     }
     if (mode == PLAY_MODE_HELP)

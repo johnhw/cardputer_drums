@@ -14,7 +14,7 @@ void adjustKitParam(DrumMachine &dm, int scaleMode, int adj);
 void resetKitParam(DrumMachine &dm);
 void initPreviewMode(DrumMachine &dm);
 
-enum PARAMS 
+enum PARAMS
 {
     PARAM_DETUNE,
     PARAM_VOLUME,
@@ -33,20 +33,20 @@ enum PARAMS
 #define MAX_SAMPLE_ADJUST 160000
 
 const int32_t paramLimits[PARAM_N][2] = {
-    {-2400, 2400}, // detune
-    {-2000, 2000}, // volume    
-    {0, 1000}, // cutoff
+    {-2400, 2400},                           // detune
+    {-2000, 2000},                           // volume
+    {0, 1000},                               // cutoff
     {-MAX_SAMPLE_ADJUST, MAX_SAMPLE_ADJUST}, // trim start
-    {0, MAX_SAMPLE_ADJUST}, // trim end
-    {0, MAX_SAMPLE_ADJUST}, // loop start
-    {0, MAX_SAMPLE_ADJUST}, // loop end
-    {0, 5000}, // attack
-    {0, 5000}, // decay
-    {0, 1000}, // sustain
-    {0, 5000} // release
+    {0, MAX_SAMPLE_ADJUST},                  // trim end
+    {0, MAX_SAMPLE_ADJUST},                  // loop start
+    {0, MAX_SAMPLE_ADJUST},                  // loop end
+    {0, 5000},                               // attack
+    {0, 5000},                               // decay
+    {0, 1000},                               // sustain
+    {0, 5000}                                // release
 };
 
-const String paramNames [] = {
+const String paramNames[] = {
     "Detune",
     "Volume",
     "Cutoff",
@@ -57,15 +57,13 @@ const String paramNames [] = {
     "Attack",
     "Decay",
     "Sustain",
-    "Release"
-};
+    "Release"};
 
 enum SCALES
 {
-  SCALE_NORMAL,
-  SCALE_FINE,
-  SCALE_COARSE,
-  SCALE_EXTRA_FINE,
-  SCALE_EXTRA_COARSE
+    SCALE_NORMAL,
+    SCALE_FINE,
+    SCALE_COARSE,
+    SCALE_EXTRA_FINE,
+    SCALE_EXTRA_COARSE
 };
-

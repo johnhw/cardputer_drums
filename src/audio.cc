@@ -37,7 +37,7 @@ void allocateMix(DrumMachine &dm)
     bufSamples = maxPatSamples / bufferBeats;
     for (int i = 0; i < N_BUFFERS; i++)
         dm.audioBuffers[i] = (int16_t *)allocBuffer(dm.audioBuffers[i], bufSamples, sizeof(int16_t));
-    dm.maxBufferLen = bufSamples;    
+    dm.maxBufferLen = bufSamples;
     dm.bufferA = dm.audioBuffers[0];
     dm.bufferB = dm.audioBuffers[1];
 
@@ -124,7 +124,7 @@ void resetMixChannel(mixData_t *mx)
     mx->stepIndex = -1;
     mx->nextIndex = -1;
     mx->kickDelay = 0;
-    mx->channelGain = 1.0; 
+    mx->channelGain = 1.0;
     mx->totalGain = 0.0f; // will be set by the first sample
     mx->currentVelocity = 0;
     mx->currentFilter = 0.0f;
@@ -151,23 +151,23 @@ void resetMix(DrumMachine &dm)
     {
         mx = &mixData[chan];
         ch = &dm.channels[chan];
-        resetMixChannel(mx); 
+        resetMixChannel(mx);
         mx->channelGain = powf(1.4142, (ch->volume - 8));
         mx->channelDetune = ch->detune;
-        mx->channelCutoff = ch->filterCutoff;       
+        mx->channelCutoff = ch->filterCutoff;
     }
 }
 
 void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
-{    
+{
     mx->stepIndex = mx->nextIndex;
     sample_t *newSample;
     int32_t index = ch->type;
-    newSample = getSample(dm, index);   
+    newSample = getSample(dm, index);
     if (newSample != nullptr) // cutoff if there's a new sample to start (do nothing otherwise)
     {
         mx->currentSample = newSample;
-        mx->currentVelocity = ch->velocity;    
+        mx->currentVelocity = ch->velocity;
         // add cumulative detune from the sample itself, and the channel tuning
         mx->totalDetune = newSample->adjustments.detune + ch->detune + mx->channelDetune;
         mx->freqIncrement = freqIncrement(mx->totalDetune); // compute the actual step increment
@@ -189,21 +189,21 @@ float mixCurrentSample(mixData_t *mx)
     if (mx->currentSample && mx->currentSample->len != 0)
     {
         mx->fractionalSampleIndex += mx->freqIncrement;
-        mx->sampleIndex = mx->fractionalSampleIndex / 32768;        
+        mx->sampleIndex = mx->fractionalSampleIndex / 32768;
         if (mx->sampleIndex >= 0) // skip if we have a negative index (delayed start)
             in = mx->currentSample->samples[mx->sampleIndex] * mx->totalGain;
-        mx->currentFilter = mx->filterAlpha * mx->currentFilter + (1.0f - mx->filterAlpha) * in;       
+        mx->currentFilter = mx->filterAlpha * mx->currentFilter + (1.0f - mx->filterAlpha) * in;
         in = mx->currentFilter;
-    
+
         sample_adjustment_t *adj = &mx->currentSample->adjustments;
         // loop, if required (TODO: need to add noteoff logic here)
-        if(adj->loopEnabled && mx->sampleIndex >= adj->loopEnd)
+        if (adj->loopEnabled && mx->sampleIndex >= adj->loopEnd)
         {
             mx->sampleIndex = adj->loopStart;
             mx->fractionalSampleIndex = mx->sampleIndex * 32768;
         }
         // terminate if we run off the end
-        if(mx->sampleIndex >= mx->currentSample->len)
+        if (mx->sampleIndex >= mx->currentSample->len)
         {
             mx->currentSample = nullptr;
         }
@@ -217,14 +217,14 @@ void resetAudioPlayback(DrumMachine &dm)
     // stop the audio
     M5Cardputer.Speaker.end();
     // clear all the audio buffers
-    for(int i=0;i<N_BUFFERS;i++)
+    for (int i = 0; i < N_BUFFERS; i++)
     {
         memset(dm.audioBuffers[i], 0, dm.maxBufferLen * sizeof(int16_t));
     }
     // reset the buffer index
     dm.waveBufferIndex = 0;
     // restart audio
-    M5Cardputer.Speaker.begin(); 
+    M5Cardputer.Speaker.begin();
 }
 
 // apply gain reduction, clip and write to the buffer
@@ -245,7 +245,7 @@ void mixSingleSampleToBuffer(DrumMachine &dm, int16_t *buffer, int32_t len)
 {
     float out;
     for (int j = 0; j < len; j++)
-    {        
+    {
         out = mixCurrentSample(&dm.previewData.previewMix);
         writeToBuffer(out, &buffer[j]);
         dm.mixIndex++;
@@ -259,8 +259,8 @@ void triggerPreviewSample(DrumMachine &dm, int index)
         .velocity = 8,
         .kickDelay = 0,
         .fx = FX_NONE,
-        .detune = 0};
-    resetMixChannel(&dm.previewData.previewMix);    
+        .detune = dm.previewData.detune};
+    resetMixChannel(&dm.previewData.previewMix);
     mixTriggerSample(dm, &dm.previewData.previewMix, &dm.previewData.previewChan);
 }
 
@@ -271,8 +271,8 @@ void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer, int32_t len)
     mixData_t *mixData = dm.mixData;
     int32_t out;
     int32_t bufferIndex;
-    int16_t newIndex = -1;    
-    mixData_t *mx;    
+    int16_t newIndex = -1;
+    mixData_t *mx;
     sample_adjustment_t *adj;
 
     for (j = 0; j < len; j++)
@@ -281,7 +281,7 @@ void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer, int32_t len)
         for (chan = 0; chan < nChans; chan++)
         {
             mx = &mixData[chan];
-            
+
             if (!dm.channels[chan]._enabled)
                 continue; // skip disabled channels
 
@@ -294,7 +294,7 @@ void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer, int32_t len)
                 if (newIndex % 2 == 0)
                     mx->kickDelay = 0; // no swing on downbeats
                 else
-                    mx->kickDelay = dm.stepSamples * dm.swing / 200;           // apply swing (max=50% delay)
+                    mx->kickDelay = dm.stepSamples * dm.swing / 200;                     // apply swing (max=50% delay)
                 mx->kickDelay += channelSteps[mx->nextIndex].kickDelay * dm.oneKickTime; // add on forced kick delay in the channel
             }
             // did it change yet? if so, we need a new sample
@@ -387,10 +387,9 @@ bool renderToSD(DrumMachine &dm, String fname)
     return true;
 }
 
-
 bool feedBuffers(DrumMachine &dm)
 {
-    if(M5Cardputer.Speaker.isPlaying(0) != 2)
+    if (M5Cardputer.Speaker.isPlaying(0) != 2)
     {
         M5Cardputer.Speaker.playRaw(dm.bufferA, dm.waveBufferLen, samplerate, false, 1, 0);
         int16_t *tmp_buffer;
@@ -407,12 +406,11 @@ bool feedBuffers(DrumMachine &dm)
 // simple, just keep feeding the buffers
 void feedPreviewBuffers(DrumMachine &dm)
 {
-     while(feedBuffers(dm))
-     {
-         mixSingleSampleToBuffer(dm, dm.bufferB, dm.waveBufferLen);
-     } 
+    while (feedBuffers(dm))
+    {
+        mixSingleSampleToBuffer(dm, dm.bufferB, dm.waveBufferLen);
+    }
 }
-
 
 // feed the audio buffers with the mixed audio
 void feedPatternBuffers(DrumMachine &dm)
@@ -435,7 +433,7 @@ void feedPatternBuffers(DrumMachine &dm)
             dm.waveBufferIndex = 0;
             nextPattern(dm); // advance the pattern (only does anything in pattern sequence mode)
             resetMix(dm);
-        }    
+        }
     }
 }
 

@@ -285,7 +285,7 @@ bool loadKitSD(const String &path, DrumMachine &dm)
         int16_t *buffer = (int16_t *)allocArena(&dm.sampleArena, byteLen);
         file.read((byte *)buffer, byteLen);
         dm.drumSamples[i].samples = buffer;
-        dm.drumSamples[i].len = maxLen;                
+        dm.drumSamples[i].len = maxLen;
         foundSamples = true;
         file.close();
     }

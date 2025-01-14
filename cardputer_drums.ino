@@ -26,9 +26,8 @@
 // CHESNEY HAWKES MODE
 // beat slicer? // audio recording
 // fix pattern switch visual sync (off by 1/2 beat)
-// fix preview bugs and bass bug? Add ctrl-note to preview
-// Loop samples: Add envelopes. 
-// flams: double flam, triple flam, roll, reverse. Key, UI, audio rendering
+  // Loop samples: Add envelopes. 
+// flams: double flam, triple flam, roll, reverse. UI, audio rendering
 // UI for step and channel tuning. Ctrl +note to set pitch (piano keyboard). Ctrl </> to set octave. Ctrl [ / ] to set finetune. Ctrl-space to clear
 // Ctrl-Shift-<n> to set probability
 // allow blank samples to change volume/pitch

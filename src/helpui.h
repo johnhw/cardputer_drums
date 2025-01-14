@@ -8,4 +8,4 @@ void helpModeUpdate(DrumMachine &dm);
 void helpModeKeys(DrumMachine &dm);
 void setGraphicsModeHelp(DrumMachine &dm);
 
-#endif 
+#endif

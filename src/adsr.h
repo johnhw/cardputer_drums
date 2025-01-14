@@ -3,7 +3,8 @@
 
 #define MIN_ADSR_AMPLITUDE 0.00005f
 
-typedef enum {
+typedef enum
+{
     ADSR_STATE_IDLE = 0,
     ADSR_STATE_ATTACK,
     ADSR_STATE_DECAY,
@@ -11,12 +12,13 @@ typedef enum {
     ADSR_STATE_RELEASE
 } adsr_state_t;
 
-/* 
+/*
  * This struct holds all precomputed values for an exponential ADSR.
  *  a_ms, d_ms, s_db, r_ms: Attack/Decay/Release in milliseconds, Sustain in dB.
  *  samplerate: sample rate in Hz.
  */
-typedef struct {
+typedef struct
+{
     float samplerate;
 
     // User-specified times and sustain-level (in dB).
@@ -26,10 +28,10 @@ typedef struct {
     float sustainDb;
 
     // Sustain in linear scale.
-    float sustainLevel;  // = 10^(sustainDb/20)
+    float sustainLevel; // = 10^(sustainDb/20)
 
     // Exponential coefficients for each phase.
-    float attackCoef; 
+    float attackCoef;
     float decayCoef;
     float releaseCoef;
 
@@ -39,5 +41,3 @@ typedef struct {
     // Current state of the envelope.
     adsr_state_t state;
 } adsr_t;
-
-

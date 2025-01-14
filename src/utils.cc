@@ -117,6 +117,18 @@ void lowerMessage(const char *message)
   M5Cardputer.Display.setFont(&fonts::Font2);
 }
 
+// using keyboardSemitoneSequence
+// in theory we could microtune this
+int32_t getKeyboardPianoCents()
+{
+  int32_t index = getKeyIndex(shiftKeyboardSemitoneSequence); // ctrl reads as shift?
+  if(index==-1)
+    index = getKeyIndex(keyboardSemitoneSequence);
+  if(index==-1)
+    return -1;
+  return index * 100;
+}
+
 // show which modifiers are pressed
 void drawModifierKeys(int32_t backgroundColor)
 {

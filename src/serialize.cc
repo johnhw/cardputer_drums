@@ -10,22 +10,20 @@ void addToken(File ser, int32_t value)
     ser.print(",");
 }
 
-
 // read a single integer from the string, followed by a comma
 int32_t getToken(File ser)
 {
-    int32_t value = 0;    
-    while(ser.peek() != ',' && ser.peek() != -1)
+    int32_t value = 0;
+    while (ser.peek() != ',' && ser.peek() != -1)
     {
         value = value * 10 + (ser.read() - '0');
     }
-    if(ser.peek() == ',')
+    if (ser.peek() == ',')
     {
         ser.read();
     }
     return value;
 }
-
 
 bool writeSampleAdjustment(sample_adjustment_t *adj, File &ser)
 {
@@ -47,7 +45,7 @@ bool writeSampleAdjustment(sample_adjustment_t *adj, File &ser)
 bool readSampleAdjustment(sample_adjustment_t *adj, File &ser)
 {
     int32_t id = getToken(ser);
-    if(id != 0xf00d)
+    if (id != 0xf00d)
     {
         Serial.println("Invalid sample adjustment ID");
         return false;
@@ -68,7 +66,7 @@ bool readSampleAdjustment(sample_adjustment_t *adj, File &ser)
 
 bool readSampleAdjustments(DrumMachine &dm, File &ser)
 {
-    for(int i=0;i<26;i++)
+    for (int i = 0; i < 26; i++)
     {
         readSampleAdjustment(&dm.drumSamples[i].adjustments, ser);
     }
@@ -77,7 +75,7 @@ bool readSampleAdjustments(DrumMachine &dm, File &ser)
 
 bool writeSampleAdjustments(DrumMachine &dm, File &ser)
 {
-    for(int i=0;i<26;i++)
+    for (int i = 0; i < 26; i++)
     {
         writeSampleAdjustment(&dm.drumSamples[i].adjustments, ser);
     }
@@ -87,19 +85,19 @@ bool writeSampleAdjustments(DrumMachine &dm, File &ser)
 /* read the pattern data from the file */
 bool readPatterns(DrumMachine &dm, File &ser)
 {
-    if(getToken(ser)!=0xf002)
+    if (getToken(ser) != 0xf002)
     {
         Serial.println("Invalid pattern ID");
         return false;
     }
     int32_t nPatterns = getToken(ser);
-    if(nPatterns != nSteps * nChans * maxPatterns)
+    if (nPatterns != nSteps * nChans * maxPatterns)
     {
         Serial.println("Invalid number of patterns");
         return false;
     }
 
-    for(int i=0;i<nSteps * nChans * maxPatterns;i++)
+    for (int i = 0; i < nSteps * nChans * maxPatterns; i++)
     {
         dm.allPatterns[i].type = getToken(ser);
         dm.allPatterns[i].velocity = getToken(ser);
@@ -114,7 +112,7 @@ bool writePatterns(DrumMachine &dm, File &ser)
 {
     addToken(ser, 0xf002);
     addToken(ser, nSteps * nChans * maxPatterns);
-    for(int i=0;i<nSteps * nChans * maxPatterns;i++)
+    for (int i = 0; i < nSteps * nChans * maxPatterns; i++)
     {
         addToken(ser, dm.allPatterns[i].type);
         addToken(ser, dm.allPatterns[i].velocity);
@@ -126,19 +124,19 @@ bool writePatterns(DrumMachine &dm, File &ser)
 /* read the channel data from the file */
 bool readChannels(DrumMachine &dm, File &ser)
 {
-    if(getToken(ser)!=0xf002)
+    if (getToken(ser) != 0xf002)
     {
         Serial.println("Invalid channel ID");
         return false;
     }
     int32_t nChansCheck = getToken(ser);
-    if(nChansCheck != nChans)
+    if (nChansCheck != nChans)
     {
         Serial.println("Invalid number of channels");
         return false;
     }
 
-    for(int i=0;i<nChans;i++)
+    for (int i = 0; i < nChans; i++)
     {
         dm.channels[i].volume = getToken(ser);
         dm.channels[i].mute = getToken(ser);
@@ -155,7 +153,7 @@ bool writeChannels(DrumMachine &dm, File &ser)
 {
     addToken(ser, 0xf002);
     addToken(ser, nChans);
-    for(int i=0;i<nChans;i++)
+    for (int i = 0; i < nChans; i++)
     {
         addToken(ser, dm.channels[i].volume);
         addToken(ser, dm.channels[i].mute);
@@ -166,10 +164,9 @@ bool writeChannels(DrumMachine &dm, File &ser)
     return true;
 }
 
-
 bool writeDrumMachine(DrumMachine &dm, File &ser)
 {
-    char *buf;    
+    char *buf;
     addToken(ser, SERIALIZE_ID);
     addToken(ser, dm.bpm);
     addToken(ser, dm.swing);
@@ -180,7 +177,7 @@ bool writeDrumMachine(DrumMachine &dm, File &ser)
 
     addToken(ser, strlen(dm.patternSequence));
 
-    for(int i=0;i<strlen(dm.patternSequence);i++)
+    for (int i = 0; i < strlen(dm.patternSequence); i++)
     {
         addToken(ser, dm.patternSequence[i]);
     }
@@ -189,13 +186,10 @@ bool writeDrumMachine(DrumMachine &dm, File &ser)
     writePatterns(dm, ser);
     writeSampleAdjustments(dm, ser);
 
+    addToken(ser, 0);
 
-    addToken(ser, 0);    
-    
     return true;
-
 }
-
 
 bool readDrumMachine(DrumMachine &dm, File &ser)
 {
@@ -203,8 +197,8 @@ bool readDrumMachine(DrumMachine &dm, File &ser)
     int pos = 0;
     int32_t id;
     id = getToken(ser);
-        
-    if(id != SERIALIZE_ID)
+
+    if (id != SERIALIZE_ID)
     {
         Serial.println("Invalid serialize ID");
         return false;
@@ -216,27 +210,25 @@ bool readDrumMachine(DrumMachine &dm, File &ser)
     dm.volume = getToken(ser);
     dm.patternMode = getToken(ser);
 
-
     int len = getToken(ser);
-    char patternSequence[len+1];
-    for(int i=0;i<len;i++)
+    char patternSequence[len + 1];
+    for (int i = 0; i < len; i++)
     {
         patternSequence[i] = getToken(ser);
     }
     patternSequence[len] = '\0';
     strcpy(dm.patternSequence, patternSequence);
-    
+
     readChannels(dm, ser);
-    readPatterns(dm, ser);        
+    readPatterns(dm, ser);
     readSampleAdjustments(dm, ser);
 
     int end = getToken(ser);
-    if(end != 0)
+    if (end != 0)
     {
         Serial.println("Invalid end token");
         return false;
     }
 
     return true;
-
 }

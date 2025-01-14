@@ -114,7 +114,7 @@ void setCursorChar(DrumMachine &dm, char c)
     dm.currentPattern[index].type = c;
 #ifdef CHAWKES
     checkHawkes(dm);
-#endif 
+#endif
     updateMix(dm, dm.cursor.step, dm.cursor.chan);
 }
 

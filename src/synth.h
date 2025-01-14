@@ -4,8 +4,6 @@
 #include "datatypes.h"
 #include "utils.h"
 
-
-
 typedef struct synth_t
 {
   float delay;
@@ -14,11 +12,11 @@ typedef struct synth_t
   float freqDecay;
   float ampAttack;
   float ampDecay;
-  float noise;  
+  float noise;
   float modRatio;
   float modStart;
   float modEnd;
-  float modDecay;  
+  float modDecay;
   float overdrive;
   float lowpassStart;
   float lowpassEnd;
@@ -42,6 +40,5 @@ struct kit_t
 void subCreateSynth(sample_t *sample, int32_t samplerate, synth_t *synth, int sampleOffset, float ampScale);
 void createSynth(sample_t *sample, int32_t samplerate, synth_t *synth);
 inline float randFloat();
-
 
 #endif

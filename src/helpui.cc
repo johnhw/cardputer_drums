@@ -1,8 +1,8 @@
 #include <M5Cardputer.h>
 #include "helpui.h"
-#include "ui.h" 
+#include "ui.h"
 
-constexpr const char* helpStrings[] = {
+constexpr const char *helpStrings[] = {
     "^Pattern",
     "a-z sample",
     "0-9 velocity",
@@ -12,16 +12,16 @@ constexpr const char* helpStrings[] = {
     "Sh] chan. fwd",
     "Sh[ chan. back",
     "fn-k live drum",
-    
+
     "^Global",
     "fn-; inc. BPM",
     "fn-, dec. BPM",
     "fn-. dec. swing",
-    "fn-/ inc. swing",    
+    "fn-/ inc. swing",
     "fn-[ dec. vol",
     "fn-] inc. vol",
     "ESC Show help",
-    
+
     "^Kit edit",
     "BtA: kit edit.",
 
@@ -61,7 +61,8 @@ constexpr const char* helpStrings[] = {
 };
 
 // exit on any key
-void helpModeKeys(DrumMachine &dm) {
+void helpModeKeys(DrumMachine &dm)
+{
   if (M5Cardputer.Keyboard.isChange())
   {
     if (M5Cardputer.Keyboard.isPressed())
@@ -73,41 +74,47 @@ void helpModeKeys(DrumMachine &dm) {
 
 void helpModeUpdate(DrumMachine &dm)
 {
-    helpModeKeys(dm);
+  helpModeKeys(dm);
 }
 
-void displayHelpText() {
-    int initialX = 6;
-    int initialY = 6;
-    int x = initialX;
-    int y = initialY;
-    int size = sizeof(helpStrings) / sizeof(helpStrings[0]);
-    int columnOffset = 70; // Width of each column
-    int lineHeight = 7;    // Height of each line
-    int maxHeight = M5Cardputer.Display.height() - 12;
-    M5Cardputer.Display.setFont(&fonts::TomThumb);  
-    auto display = M5Cardputer.Display;
-    for (size_t i = 0; i < size; ++i) {
-        const char* text = helpStrings[i];
+void displayHelpText()
+{
+  int initialX = 6;
+  int initialY = 6;
+  int x = initialX;
+  int y = initialY;
+  int size = sizeof(helpStrings) / sizeof(helpStrings[0]);
+  int columnOffset = 70; // Width of each column
+  int lineHeight = 7;    // Height of each line
+  int maxHeight = M5Cardputer.Display.height() - 12;
+  M5Cardputer.Display.setFont(&fonts::TomThumb);
+  auto display = M5Cardputer.Display;
+  for (size_t i = 0; i < size; ++i)
+  {
+    const char *text = helpStrings[i];
 
-        if (text[0] == '^') { // Heading, marked by caret
-            display.setTextColor(WHITE);
-            display.setTextDatum(top_center);
-            display.drawString(text + 1, x + columnOffset / 2, y); // Center heading
-        } else { // Regular text
-            display.setTextColor(GREEN);
-            display.setTextDatum(top_left);
-            display.drawString(text, x, y); // Left-justified text
-        }
-
-        y += lineHeight; // Move to the next line
-
-        // Check if we've reached the bottom of the screen
-        if (y + lineHeight > maxHeight) {
-            x += columnOffset; // Start a new column to the right
-            y = initialY;      // Reset y position to the top
-        }
+    if (text[0] == '^')
+    { // Heading, marked by caret
+      display.setTextColor(WHITE);
+      display.setTextDatum(top_center);
+      display.drawString(text + 1, x + columnOffset / 2, y); // Center heading
     }
+    else
+    { // Regular text
+      display.setTextColor(GREEN);
+      display.setTextDatum(top_left);
+      display.drawString(text, x, y); // Left-justified text
+    }
+
+    y += lineHeight; // Move to the next line
+
+    // Check if we've reached the bottom of the screen
+    if (y + lineHeight > maxHeight)
+    {
+      x += columnOffset; // Start a new column to the right
+      y = initialY;      // Reset y position to the top
+    }
+  }
 }
 
 void setGraphicsModeHelp(DrumMachine &dm)
@@ -116,5 +123,4 @@ void setGraphicsModeHelp(DrumMachine &dm)
   M5Cardputer.Display.setFont(&fonts::Font0);
   M5Cardputer.Display.setTextColor(GREEN);
   displayHelpText();
-
 }
