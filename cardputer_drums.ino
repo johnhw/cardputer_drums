@@ -24,13 +24,13 @@
 
 // chiptunes kits
 // CHESNEY HAWKES MODE
-
 // beat slicer? // audio recording
-// fix pattern switch visual sync (off by 1/2 bar)
-// better error messages etc. for kit load/save
-// Loop samples: unify preview. Add envelopes. Better loop boolean (add to adjustments)
+// fix pattern switch visual sync (off by 1/2 beat)
+// fix preview bugs and bass bug? Add ctrl-note to preview
+// Loop samples: Add envelopes. 
 // flams: double flam, triple flam, roll, reverse. Key, UI, audio rendering
-// UI for step and channel tuning
+// UI for step and channel tuning. Ctrl +note to set pitch (piano keyboard). Ctrl </> to set octave. Ctrl [ / ] to set finetune. Ctrl-space to clear
+// Ctrl-Shift-<n> to set probability
 // allow blank samples to change volume/pitch
 // add stop note sample/step ('#') (trigger release)
 // add glide for pitch?
@@ -43,9 +43,7 @@
 // chords in kits
 // kit editor
 // basic undo
-// beat slicer
-// polyrhytm patterns (different channel lengths)
-// probability
+// polyrhythm patterns (different channel lengths)
 // headphone USB-C audio
 
 
@@ -65,14 +63,7 @@ void initCardputer();
 void setup(void);
 void loop(void);
 
-static struct DrumMachine machine; // global drum machine state
-
-// set up the Flash filesystem
-void initFS()
-{
-  initLittleFS();  
-  initSD();
-}
+static struct DrumMachine dm; // global drum machine state
 
 // Initialize the Cardputer
 void initCardputer()
@@ -83,32 +74,21 @@ void initCardputer()
   M5Cardputer.Display.setRotation(1);
   M5Cardputer.Speaker.setVolume(255);
   M5Cardputer.Speaker.begin();  
-
-  initFS();
-
+  initLittleFS();  
+  initSD();
 }
 
 void splash()
 {
-
-
   auto splashSprite = M5Cardputer.Display; 
   splashSprite.clearDisplay(TFT_WHITE); 
 
   splashSprite.setFont(&fonts::Orbitron_Light_24);
   splashSprite.setTextDatum(top_center);
   splashSprite.setTextColor(TFT_BLACK);
-  // for(int i=-1;i<2;i++)
-  //   for(int j=-1;j<2;j++)
-  //   splashSprite.drawString("BONNETHEAD", M5Cardputer.Display.width() / 2 + i, M5Cardputer.Display.height() / 2 - 50 + j);
-  
-  // splashSprite.setTextColor(TFT_LIGHTGREY);
   splashSprite.drawString("BONNETHEAD", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 - 50);
-  
-  
   splashSprite.loadFont(font_vlw_routed_7);
   splashSprite.setTextColor(TFT_BLACK);
-  
   splashSprite.drawString(VERSION, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 - 20 );
   splashSprite.setFont(&fonts::Font0);
   // draw a rectangle for the lower text
@@ -116,39 +96,35 @@ void splash()
   // draw text in small font below  
   splashSprite.setTextColor(TFT_WHITE);
   splashSprite.drawString("W I L L I A M S O N  I N D U S T R I E S", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 + 52 );
-  
-
 }
 
 
 void setup(void)
-{  
-  
+{    
   initCardputer();
   Serial.println("\n\n\nBonnetHead "+VERSION+"\n\n\n");
-  initState(machine);
-  splash();    
-  
-  resetState(machine);
+  initState(dm);
+  splash();      
+  resetState(dm);
   String fname = "/startup.drm";
-  bool success = loadDrumMachine(machine, fname);  
+  bool success = loadDrumMachine(dm, fname);  
   if(!success)
   {
-    machine.kit = -1;
-    resetState(machine);
+    dm.kit = -1;
+    resetState(dm);
   }
 
-  if(machine.kit==-1)
-    setKit(machine, 1); // set the default kit if one didn't get loaded.
+  if(dm.kit==-1)
+    setKit(dm, 1); // set the default kit if one didn't get loaded.
   // clear the splash and redraw
-  machine.splashFlag = false;
-  resetMix(machine);
-  updatePattern(machine);
+  dm.splashFlag = false;
+  resetMix(dm);
+  updatePattern(dm);
 }
 
 void loop(void)
 {
   M5Cardputer.update();
-  updateUI(machine);
+  updateUI(dm);
   delay(1);
 }

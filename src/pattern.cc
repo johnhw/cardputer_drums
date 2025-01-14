@@ -178,15 +178,8 @@ sample_t *getSample(DrumMachine &dm, int16_t sampleIndex)
     return &dm.drumSamples[ix];
 }
 
-void getDetune(DrumMachine &dm, int16_t step, int16_t chan, int32_t &detune)
+chanData_t *getStep(DrumMachine &dm, int16_t step, int16_t chan)
 {
     int index = step + nSteps * chan;
-    detune = dm.currentPattern[index].detune;
-}
-
-void getStep(DrumMachine &dm, int16_t step, int16_t chan, sample_t *&sample, int16_t &velocity)
-{
-    int index = step + nSteps * chan;
-    sample = getSample(dm, dm.currentPattern[index].type);
-    velocity = dm.currentPattern[index].velocity;    
+    return &dm.currentPattern[index];
 }

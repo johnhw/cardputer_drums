@@ -5,19 +5,12 @@
 #include "ui.h"
 #include "pattern.h"
 
-enum SCALES
-{
-  SCALE_NORMAL,
-  SCALE_FINE,
-  SCALE_COARSE,
-  SCALE_EXTRA_FINE,
-  SCALE_EXTRA_COARSE
-};
-
 void initPreviewMode(DrumMachine &dm)
 {
+  resetAudioPlayback(dm);
+  triggerPreviewSample(dm, 'a' - 1);
   dm.previewData.previewDirty = true;
-  dm.previewData.lastSample = 'z';
+  dm.previewData.lastSample = 'q';
   setGraphicsModePreview();
 }
 
@@ -27,7 +20,6 @@ void setGraphicsModePreview()
   M5Cardputer.Display.setFont(&fonts::FreeMonoBold24pt7b);
   M5Cardputer.Display.setTextDatum(top_center);
   M5Cardputer.Display.setTextColor(WHITE);
- 
 }
 
 void previewFnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
@@ -79,7 +71,7 @@ void adjustKitParam(DrumMachine &dm, int scaleMode, int adj)
       scale = 1200; // fix to octave for this case
   }
 
-  if(param == PARAM_TRIM_END || param == PARAM_LOOP_END)
+  if (param == PARAM_TRIM_END || param == PARAM_LOOP_END)
   {
     adj = -adj; // reverse the sign for end points
   }
@@ -109,17 +101,17 @@ void prevKitParam(DrumMachine &dm)
 }
 
 // in preview mode, just play samples immediately
-void previewModeUpdate(DrumMachine &dm)
+void previewModeKeys(DrumMachine &dm)
 {
-    if (M5Cardputer.BtnA.wasClicked())
-    {
-      M5Cardputer.update();
-      setPlayMode(dm, 0);
-    }
+  if (M5Cardputer.BtnA.wasClicked())
+  {
+    M5Cardputer.update();
+    setPlayMode(dm, 0);
+  }
 
   if (M5Cardputer.Keyboard.isChange())
   {
-  
+    drawModifierKeys(TFT_DARKGREY);
 
     // check for actions (load/save kit)
     if (dm.bankAction != ACTION_NONE)
@@ -153,14 +145,14 @@ void previewModeUpdate(DrumMachine &dm)
         if (status.word.size() > 0)
         {
           if (isalpha(status.word[0]))
-          {                        
+          {
             previewSample(dm, status.word[0]);
           }
         }
 
         if (M5Cardputer.Keyboard.isKeyPressed(' '))
         {
-          
+
           resetKitParam(dm);
         }
 
@@ -197,18 +189,25 @@ void previewModeUpdate(DrumMachine &dm)
         if (M5Cardputer.Keyboard.isKeyPressed(','))
         {
           prevKitParam(dm);
-          dm.previewData.previewDirty = true; 
+          dm.previewData.previewDirty = true;
           redrawPreview(dm);
         }
         if (M5Cardputer.Keyboard.isKeyPressed('/'))
         {
           nextKitParam(dm);
-          dm.previewData.previewDirty = true; 
+          dm.previewData.previewDirty = true;
           redrawPreview(dm);
         }
       }
     }
   }
+}
+
+void previewModeUpdate(DrumMachine &dm)
+{
+  previewModeKeys(dm);
+  // feed buffers
+  feedPreviewBuffers(dm);
 }
 
 void getKitParamValue(DrumMachine &dm, int32_t param, char sample, int32_t &value)
@@ -265,19 +264,35 @@ void setKitParamValue(DrumMachine &dm, int32_t param, char sample, int32_t value
   samplePtr = getSample(dm, sample);
 
   // enforce param limits
-  if(value < paramLimits[param][0])
+  if (value < paramLimits[param][0])
     value = paramLimits[param][0];
-  if(value > paramLimits[param][1])
+  if (value > paramLimits[param][1])
     value = paramLimits[param][1];
+
+
 
   if (!samplePtr)
   {
     return;
   }
 
-  switch (param)
-  {
-  case PARAM_DETUNE:
+    // limit loop
+    if (param == PARAM_LOOP_START || param == PARAM_LOOP_END)
+    {
+    if (value < 0)
+      value = 0;
+    if (value > samplePtr->len)
+      value = samplePtr->len;
+    if (param == PARAM_LOOP_END && value < samplePtr->adjustments.loopStart)
+      value = samplePtr->adjustments.loopStart;
+    // set looping to enabled when loopStart != loopEnd
+    if (samplePtr->adjustments.loopStart != 0 && samplePtr->adjustments.loopEnd != 0)
+      samplePtr->adjustments.loopEnabled = true;
+    }
+
+    switch (param)
+    {
+    case PARAM_DETUNE:
     samplePtr->adjustments.detune = value;
     break;
   case PARAM_VOLUME:
@@ -314,23 +329,33 @@ void setKitParamValue(DrumMachine &dm, int32_t param, char sample, int32_t value
   dm.previewData.previewDirty = true; // display needs to update
 }
 
+// trigger the audio for a sample
 void playPreviewSample(DrumMachine &dm, char sample)
 {
   sample_t *samplePtr;
-  if(sample!=dm.previewData.lastSample)
-    dm.previewData.previewDirty = true;
-
-  dm.previewData.lastSample = sample;
+  if (sample != dm.previewData.lastSample)
+    dm.previewData.previewDirty = true;  
+  
   samplePtr = getSample(dm, sample);
-  if (samplePtr)
-    previewSample(dm, samplePtr);
+  if (samplePtr && samplePtr->len > 0)
+  {
+    // force the buffer to be flushed to reduce latency
+    dm.previewData.lastSample = sample;
+    resetAudioPlayback(dm);
+    triggerPreviewSample(dm, sample);  
+  }
+  else
+  {
+    dm.previewData.lastSample = '`';
+    resetAudioPlayback(dm);
+  }
 }
 
 // render a waveform to the screen
 // draw the waveform with steps proportional to the width of the screen
 // show red lines at the start and end of the trim region (remember end counts back from then end!)
 void renderWaveform(sample_t *sample, int32_t baseY)
-{    
+{
   int32_t width = M5Cardputer.Display.width() * 0.8;
   int32_t height = 26;
   int32_t len = sample->len;
@@ -350,11 +375,11 @@ void renderWaveform(sample_t *sample, int32_t baseY)
   M5Cardputer.Display.drawLine(baseX, baseY, baseX + width, baseY, TFT_GREEN);
 
   // draw the waveform
-  for(i=0;i<width;i++)
+  for (i = 0; i < width; i++)
   {
     x = i + baseX;
-    y = baseY - (sample->samples[i*step] * height / 32768);
-    if(i>0)
+    y = baseY - (sample->samples[i * step] * height / 32768);
+    if (i > 0)
     {
       M5Cardputer.Display.drawLine(lastX, lastY, x, y, TFT_WHITE);
     }
@@ -368,8 +393,8 @@ void renderWaveform(sample_t *sample, int32_t baseY)
   M5Cardputer.Display.drawLine(start, baseY - height, start, baseY + height, TFT_RED);
   M5Cardputer.Display.drawLine(end, baseY - height, end, baseY + height, TFT_RED);
 
-  bool isLoop = sample->adjustments.loopEnd!=0 && sample->adjustments.loopStart!=0;
-  if(isLoop)
+  bool isLoop = sample->adjustments.loopEnd != 0 && sample->adjustments.loopStart != 0;
+  if (isLoop)
   {
     int32_t loopStart = baseX + sample->adjustments.loopStart * width / len;
     int32_t loopEnd = baseX + (len - sample->adjustments.loopEnd) * width / len;
@@ -381,18 +406,22 @@ void renderWaveform(sample_t *sample, int32_t baseY)
 void redrawPreview(DrumMachine &dm)
 {
   // skip if nothing has changed
-  if(!dm.previewData.previewDirty)
+  if (!dm.previewData.previewDirty)
     return;
   char *preview = "X";
   char sample = dm.previewData.lastSample;
   preview[0] = sample;
   M5Cardputer.Display.clearDisplay(TFT_DARKGREY);
+
+  if(sample<='`') return;
   M5Cardputer.Display.setTextColor(WHITE);
   M5Cardputer.Display.setFont(&fonts::FreeMonoBold24pt7b);
   M5Cardputer.Display.setTextColor(BLACK);
   M5Cardputer.Display.drawString(preview, M5Cardputer.Display.width() / 2 + 1, M5Cardputer.Display.height() / 2 - 60 + 1);
   M5Cardputer.Display.setTextColor(WHITE);
   M5Cardputer.Display.drawString(preview, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 - 60);
+
+  
 
   String currentParam, nextParam, prevParam;
   int32_t prevIndex, currentIndex, nextIndex;
@@ -403,21 +432,20 @@ void redrawPreview(DrumMachine &dm)
   currentParam = paramNames[currentIndex];
   nextParam = paramNames[nextIndex];
   prevParam = paramNames[prevIndex];
-  
-  
+
   // create the message (prevParamName:currentParamName:currentParamValue nextParamName:)
   char msg[256];
   int32_t current;
 
   getKitParamValue(dm, currentIndex, sample, current);
-  
+
   M5Cardputer.Display.setFont(&fonts::Font2);
   M5Cardputer.Display.setTextColor(TFT_BLACK);
-  snprintf(msg, 255, "%7s %7s %05d %7s", prevParam.c_str() ,  currentParam.c_str(),current, nextParam.c_str());
-  M5Cardputer.Display.drawString(msg, M5Cardputer.Display.width() / 2+1-13, M5Cardputer.Display.height() / 2+1-13);
+  snprintf(msg, 255, "%7s %7s %05d %7s", prevParam.c_str(), currentParam.c_str(), current, nextParam.c_str());
+  M5Cardputer.Display.drawString(msg, M5Cardputer.Display.width() / 2 + 1 - 13, M5Cardputer.Display.height() / 2 + 1 - 13);
   M5Cardputer.Display.setTextColor(TFT_WHITE);
-  M5Cardputer.Display.drawString(msg, M5Cardputer.Display.width() / 2-13, M5Cardputer.Display.height() / 2-13);
-  
+  M5Cardputer.Display.drawString(msg, M5Cardputer.Display.width() / 2 - 13, M5Cardputer.Display.height() / 2 - 13);
+
   sample_t *samplePtr = getSample(dm, sample);
   if (samplePtr)
   {
@@ -429,7 +457,7 @@ void redrawPreview(DrumMachine &dm)
 
 void previewSample(DrumMachine &dm, char sample)
 {
-  if(sample < 'a' || sample>'y')
+  if (sample < 'a' || sample > 'y')
     return;
   playPreviewSample(dm, sample);
   redrawPreview(dm);

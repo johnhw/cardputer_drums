@@ -57,9 +57,6 @@ typedef struct chanData_t
   int32_t detune; // detune in cents
 } chanData_t;
 
-
-
-
 // the cursor location/flash state
 typedef struct cursor_t
 {
@@ -79,7 +76,10 @@ typedef struct arena_t {
     void *top;
 } arena_t;
 
-
+typedef struct fxData
+{
+  bool reverse;
+} fxData;
 
 // data for mixing one channel into the final mix
 typedef struct mixData_t
@@ -97,42 +97,49 @@ typedef struct mixData_t
   float filterAlpha; // filter alpha value
   int32_t totalDetune; // total detune for this channel (sum of channel and sample detune)
   int32_t freqIncrement; // frequency increment for the sample (32768.0 is a frequency of 1.0)
+  int32_t channelDetune; // detune for this channel
+  int32_t channelCutoff; // cutoff for this channel  
+  fxData fx; // current FX data
 } mixData_t;
 
 typedef struct previewData_t
 {
-  char lastSample = 0;
-  int32_t lastDetune = 0;
+  char lastSample = 0; // last sample index (0-26)  
   int16_t currentParam = 0; // current parameter being edited in preview mode
-  bool previewDirty = true;
+  bool previewDirty = true; // flag to indicate that the preview needs to be updated
+  chanData_t previewChan; // the current channel data for the preview (always dummy)
+  mixData_t previewMix; // the current mix data for the preview
 } previewData_t;
 
 struct DrumMachine {
     sample_t drumSamples[27];        
-    int16_t* audioBuffers[N_BUFFERS]; // double buffering
-    int16_t *scratchBuffer; // points to audioBuffers[0]
+    int16_t* audioBuffers[N_BUFFERS]; // double buffering   
+     int32_t maxBufferLen; // true (max) length of one buffer 
     int16_t *bufferA, *bufferB; // the two buffers
     arena_t sampleArena; // memory arena for samples
 
     int32_t mixIndex = 0; // current index inside the pattern (in samples)
-    int8_t waveBufferIndex = 0; // current buffer count (4 buffers per bar)
-    
+    int8_t waveBufferIndex = 0; // current buffer count (4 buffers per bar)    
     int32_t patternSamples; // number of samples in a whole pattern
     int16_t waveBufferLen;  // samples in one buffer for a 1/4 pattern
-    int32_t maxBufferLen; // true (max) length of the buffer
-    int8_t playMode = 0;    // 0=normal; 1=sample preview
-    int16_t syncMix = 0;    // flag to indicate to remix at the next pattern loop
     int16_t stepSamples;    // length of one step in samples (usually 1/16th of a pattern)
     int32_t oneKickTime;    // time in samples to kick forward by one kickSubdiv of a step (usually 1/12 of a step)
+   
+    int8_t playMode = 0;    // 0=normal; 1=sample preview
+    int16_t syncMix = 0;    // flag to indicate to remix at the next pattern loop        
     uint32_t syncMillis;    // time in milliseconds of the last pattern loop start
+
     int16_t beatTime;       // the current beat/step we are in right now
+    float playStep = 0; // the (fractional) step we are currently playing
+
     int16_t bpm = 120;
     int16_t swing = 0;
     int16_t pattern = 0;
     int16_t kit = 0;
     int16_t volume = 0; // 16 volume levels
+
     char patternSequence[maxPatternSequence];
-    float playStep = 0; // the (fractional) step we are currently playing
+    
     int64_t tapBufferMillis[4] = {0, 0, 0, 0}; // the last tempo tap times
     
     int8_t liveVelocity = 0; // the velocity of the last input, used to set the velocity in live mode
@@ -143,17 +150,17 @@ struct DrumMachine {
     int8_t patternMode = 0; // 0 = one pattern, 1 = sequence
     int8_t patternModeSwitch = 0; // set to indicate that the pattern should switch at the next mix!
     int8_t fillPattern = -1; // the pattern to fill at the end of this pattern. If non-zero, play that pattern before loop/advance
-    int8_t lastPattern = 0; // pattern we were in before the fill
+    int8_t lastPatternBeforeFill = 0; // pattern we were in before the fill
     int16_t nKits; // number of kits available (set at start)
     
-
-    bool forceResynth; // if true, force the samples to be regenerated and not loaded from SD
+    int32_t lastMessageMillis; // number of milliseconds since the last message was displayed    
     int8_t splashFlag; // are we currently showing the splash screen?
     int16_t lastMode; // last mode we were in (so we can return to it)
     int16_t bankAction; // next bank-select action to take (e.g. save, load, etc)
-    String fileName; // the current file/bank name for the pattern
+
     cursor_t cursor;
     channel_t channels[nChans];
+    
     chanData_t* currentPattern;
     chanData_t allPatterns[nSteps * nChans * maxPatterns];
     chanData_t clipboard[nSteps * nChans];

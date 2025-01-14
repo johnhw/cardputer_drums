@@ -38,9 +38,7 @@ struct kit_t
   const int32_t scaleFreqs[8][5]; // up to 5 note chords
 };
 
-
 // times in milliseconds, frequencies in hZ
-
 void subCreateSynth(sample_t *sample, int32_t samplerate, synth_t *synth, int sampleOffset, float ampScale);
 void createSynth(sample_t *sample, int32_t samplerate, synth_t *synth);
 inline float randFloat();

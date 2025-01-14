@@ -1,15 +1,17 @@
 #include "synth.h"
 // Standard kit
 
+
 constexpr synth_t fmBass = {
     .startFreq = 0,
-    .freqDecay = 0,
     .ampAttack = 15,
     .ampDecay = 80,    
+    .modRatio = 2.0,
     .modStart = 2.0,
     .modDecay = 50,
-    .overdrive = 1.0    
+    .overdrive = 2.0    
   };
+
 
 constexpr synth_t kickDrum = {
 .startFreq = 450,
@@ -152,6 +154,7 @@ constexpr kit_t standardKit = {
 
 
 // House kit
+
 
 constexpr synth_t house_fmBass = {
     .startFreq = 0,

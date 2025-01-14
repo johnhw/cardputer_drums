@@ -5,6 +5,8 @@
 #include "datatypes.h"
 #include <M5GFX.h>
 
+#define WAV_HEADER_LEN 44
+
 // functions for SPIFFS file system
 void littlefsError(char *msg);
 bool loadFile(const String &path, String &content);

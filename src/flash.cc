@@ -196,8 +196,6 @@ bool listKitsSD(std::vector<String> &kits)
     return true;
 }
 
-#define WAV_HEADER_LEN 44
-
 /* Validate that the 44 byte header is a valid wav file
     mono, 16 bit, any sample rate */
 bool validateWavHeader(byte *buffer)

@@ -248,7 +248,13 @@ void tapTempo(DrumMachine &dm)
   int adj = (int)(bpm - dm.bpm);    
   adjBpm(dm, adj);
   String msg = "Tap BPM: " + ((int)bpm);
-  lowerMessage(msg.c_str());
+  temporaryLowerMessage(dm, msg.c_str());
+}
+
+void temporaryLowerMessage(DrumMachine &dm, const char *msg)
+{
+  lowerMessage(msg);
+  dm.lastMessageMillis = millis();
 }
 
 void noModifierKey(DrumMachine &dm, Keyboard_Class::KeysState status)
@@ -319,11 +325,11 @@ void loadBank(DrumMachine &dm, int16_t bank)
   String fname = String(filename);
   if (loadDrumMachine(dm, fname))
   {
-    lowerMessage(("Loaded bank "+String(alphaNumericChars[bank])).c_str());
+    temporaryLowerMessage(dm, ("Loaded bank "+String(alphaNumericChars[bank])).c_str());
   }
   else
   {
-    lowerMessage("Failed to load bank");
+    temporaryLowerMessage(dm, "Failed to load bank");
   }
   updatePattern(dm);
   requestMix(dm);
@@ -336,11 +342,11 @@ void saveBank(DrumMachine &dm, int16_t bank)
     String fname = String(filename);
   if (saveDrumMachine(dm, fname))
   {
-    lowerMessage(("Saved bank "+String(alphaNumericChars[bank])).c_str());
+    temporaryLowerMessage(dm, ("Saved bank "+String(alphaNumericChars[bank])).c_str());
   }
   else
   {
-    lowerMessage("Failed to save bank");
+    temporaryLowerMessage(dm, "Failed to save bank");
   }
 }
 
@@ -351,7 +357,7 @@ void ctrlKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 
 void patternModeKeys(DrumMachine &dm)
 {
-
+  
   // preview mode
   if (M5Cardputer.BtnA.wasClicked())
   {
@@ -361,7 +367,7 @@ void patternModeKeys(DrumMachine &dm)
 
   if (M5Cardputer.Keyboard.isChange())
   {
-
+    drawModifierKeys(TFT_BLACK);
     if (M5Cardputer.Keyboard.isPressed())
     {
       Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
@@ -490,7 +496,7 @@ void patternModeKeys(DrumMachine &dm)
     // shift-press for fill
     int8_t shiftDigit = getKeyIndex(")!@#$%^&*(ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     // note: backspace appears as shift-8!
-    if (shiftDigit >= 0 && !M5Cardputer.Keyboard.isKeyPressed(KEY_BACKSPACE) && !M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER) && dm.lastPattern == -1)
+    if (shiftDigit >= 0 && !M5Cardputer.Keyboard.isKeyPressed(KEY_BACKSPACE) && !M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER) && dm.lastPatternBeforeFill == -1)
     {
 
       dm.fillPattern = shiftDigit;
@@ -585,12 +591,6 @@ void patternModeKeys(DrumMachine &dm)
     if (M5Cardputer.Keyboard.isKeyPressed('?'))
       rotateChannelRight(dm);
 
-    if (M5Cardputer.Keyboard.isKeyPressed('|'))
-    {
-      // force the drums to be regenerated on fn+shift+|
-      dm.forceResynth = true;
-      setKit(dm, dm.kit);
-    }
 
     if (M5Cardputer.Keyboard.isKeyPressed('k'))
     {
@@ -608,7 +608,7 @@ void patternModeKeys(DrumMachine &dm)
       resetState(dm);
     if (M5Cardputer.Keyboard.isKeyPressed('s'))
     {
-      lowerMessage("Saved");
+      temporaryLowerMessage(dm, "Saved");
       String fname = "/startup.drm";
       saveDrumMachine(dm, fname);
     }
@@ -713,7 +713,8 @@ void patternModeKeys(DrumMachine &dm)
   {
     if (dm.splashFlag)
       return;
-
+    M5Cardputer.Display.setFont(&fonts::Font2);
+    M5Cardputer.Display.setTextColor(WHITE);
     // "underdraw" next step so that overlaps when kicking forward render correctly
     if (dm.cursor.step < nSteps - 1)
     {
@@ -736,7 +737,7 @@ void patternModeKeys(DrumMachine &dm)
     M5Cardputer.Display.setTextColor(GREEN);
     // Clear the status bar area
     M5Cardputer.Display.fillRect(0, 0, M5Cardputer.Display.width(), topHeight, TFT_BLACK);
-    if (dm.lastPattern != 0) // if in a fill, draw in red
+    if (dm.lastPatternBeforeFill != 0) // if in a fill, draw in red
       M5Cardputer.Display.setTextColor(RED);
     snprintf(statusLine, 255, "%c", patternNames[dm.pattern]);
     M5Cardputer.Display.drawString(statusLine, 10, 3);
@@ -798,7 +799,7 @@ void patternModeKeys(DrumMachine &dm)
     {
       // draw the dancing man
       String man;
-      M5Cardputer.Display.fillRect(100, 3, 200, 10, TFT_BLACK); // clear the area
+      M5Cardputer.Display.fillRect(100, 3, 140, 10, TFT_BLACK); // clear the area
       M5Cardputer.Display.setFont(&fonts::Font0);
       M5Cardputer.Display.setTextColor(GREEN);  
 
@@ -807,9 +808,9 @@ void patternModeKeys(DrumMachine &dm)
         animFrame = 7;
 
       man = ASCIIDance[animFrame];
-      int32_t yOffset = 2 * animFrame % 2;
+      int32_t yOffset = 2 * (animFrame % 2);
       M5Cardputer.Display.drawString(man.c_str(), 150, 3+yOffset);
-
+      drawModifierKeys(TFT_BLACK);
       // reset the font
       M5Cardputer.Display.setTextColor(WHITE);
       M5Cardputer.Display.setFont(&fonts::Font2);
@@ -822,6 +823,7 @@ void patternModeKeys(DrumMachine &dm)
       getCursorPixelPos(dm, step, 0, x, y);
       M5Cardputer.Display.fillRect(x, y - 1, dm.cursor.width, 2, beatColor);
       dm.beatTime = step;
+      
     }
   }
 
@@ -937,6 +939,12 @@ void patternModeKeys(DrumMachine &dm)
   // normal pattern mode
   void patternModeUpdate(DrumMachine & dm)
   {
+    if(dm.lastMessageMillis!=0 && millis()-dm.lastMessageMillis>messageTime)
+    {
+      drawStatus(dm);
+      dm.lastMessageMillis = 0;
+    }
+
     updateCursor(dm);
     renderBeatLine(dm);
     // in live mode, move the cursor with the play beat

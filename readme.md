@@ -42,14 +42,20 @@ The dot grid indicates the 16x8 steps for the current pattern.
 ## Controls
 
 ### Pattern
+* ` ` (space) tap tempo. Press four times to set the tempo.
 * `a-z` enter sounds. See the drum map for details.
 * `0-9` sets the velocity of the current step (0=silent, 9=max. 6=default)
 * `del` deletes the current step
 * `[` "kick left" shift step timing back by 1/12 step
 * `]` "kick right" shift step timing forward by 1/12 step
 
-* ` ` (space) tap tempo. Press four times to set the tempo.
+* `fn+shift+←` rotate current channel left
+* `fn+shift+→` rotate current channel right
+* `shift+[` kick current channel one 1/12 step left
+* `shift+]` kick current channel one 1/12 step right
 
+
+### Global
 * `fn+↑` increase BPM
 * `fn+↓` decrease BPM
 
@@ -63,15 +69,15 @@ The dot grid indicates the 16x8 steps for the current pattern.
 
 ### Files
 
-* `fn+s` Save the current pattern in the working buffer (automatically reloaded on startup) 
+* `fn+s` Save the current pattern in the startup buffer (automatically reloaded on startup) 
 * `fn+a <x>` Save the file as bank <x> (0-9a-z)
-* `fn+o <x>` Open a file; where <x> is the bank (0-9a-z)
+* `fn+o <x>` Open bank <x> (0-9a-z)
 * `fn+n` New file, reset everything 
-* `fn+r` Render the current pattern to a WAV file on the SD card. The file will be named `/bonnethead/renders/render-<n>.wav`
+* `fn+r` Render the current pattern/pattern sequence to a WAV file on the SD card. The file will be named `/bonnethead/renders/render-<n>.wav`
 
 ### Sequencer
 
-* `opt+<x>` where `n` is 0-9 selects pattern `n`
+* `opt+<x>` where `n` is 0-9a-z selects pattern `n`
 * `opt+shift+<x>` fill pattern `n` after this pattern, then resume 
 * `opt+ESC` toggle pattern sequence mode
 * `opt+←` pattern cursor left
@@ -81,16 +87,13 @@ The dot grid indicates the 16x8 steps for the current pattern.
 
 ### channel
 * `fn+k` enter keydrumming mode. Press keys to play the drum sounds. Press `fn+k` to exit keydrumming mode. (note: red circle at bottom indicates live keydrumming mode). Shift-K enables step-quantized keydrumming mode.
-* `fn+<n>` toggle mute channel `n`
+* `fn+<n>` toggle mute channel `n` (1-8)
 * `fn+shift+<n>` toggle solo channel `n` (multiple channels can be solo'd)
 * `fn+enter` toggle solo the current channel (where the cursor is)
 * `fn+-` decrease filter cutoff on active channels (16 steps of filter)
 * `fn+=` increase filter cutoff on active channels
 * `fn+\` decrease channel volume on active channels
 * `fn+'` inccrease channel volume on active channels
-* `fn+shift+←` rotate pattern left
-* `fn+shift+→` rotate pattern right
-
 
 ### Kits
 * `alt+<x>` select drum kit `x` (note: this will cause a delay as the kit is synthesised/loaded)
@@ -134,4 +137,5 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * ` ` reset parameter
 * `←` previous parameter
 * `→` next parameter 
+
 

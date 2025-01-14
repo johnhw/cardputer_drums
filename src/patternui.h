@@ -28,7 +28,7 @@ void checkLiveDelete(DrumMachine &dm);
 void loadBank(DrumMachine &dm, int16_t bank);
 void saveBank(DrumMachine &dm, int16_t bank);
 void patternRefresh(DrumMachine & dm);
-
+void temporaryLowerMessage(DrumMachine &dm, const char *msg);
 void noModifierKey(DrumMachine &dm, Keyboard_Class::KeysState status);
 void altKey(DrumMachine &dm, Keyboard_Class::KeysState status);
 #endif

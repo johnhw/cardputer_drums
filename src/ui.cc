@@ -1,17 +1,15 @@
-#include "ui.h"
 #include "audio.h"
 #include "pattern.h"
 #include "channels.h"
 #include "patternui.h"
 #include "previewui.h"
-#include "confirmui.h"
 #include "kits.h"
 #include "synth.h"
 #include "flash.h"
 #include "serialize.h"
 #include "helpui.h"
 #include "config.h"
-
+#include "ui.h"
 #include <LittleFS.h>
 
 /* Render the whole pattern (or pattern sequence) to 
@@ -141,6 +139,8 @@ void initState(DrumMachine &dm)
 // reset the state
 void resetState(DrumMachine &dm)
 {
+    dm.lastMessageMillis = 0;
+
     dm.cursor.width = 12;
     dm.cursor.height = 12;
 
@@ -157,7 +157,6 @@ void resetState(DrumMachine &dm)
     dm.liveMode = 0;
     dm.liveVelocity = 0;
     dm.playStep = 0.0;
-    dm.fileName = "";
 
     strcpy(dm.patternSequence, ""); // reset the pattern sequence
     dm.patternCursor = 0;
@@ -269,7 +268,7 @@ void nextPattern(DrumMachine &dm)
     if(dm.fillPattern>0)
     {
         // positive, switch to the fill pattern
-        dm.lastPattern = dm.pattern;
+        dm.lastPatternBeforeFill = dm.pattern;
         pattern = dm.fillPattern;
         dm.fillPattern = -1;
         setPattern(dm, pattern);
@@ -294,10 +293,10 @@ void nextPattern(DrumMachine &dm)
     else
     {
         // restore where we were before the fill
-        if(dm.lastPattern>0)
+        if(dm.lastPatternBeforeFill>0)
         {
-            pattern = dm.lastPattern;
-            dm.lastPattern = 0;
+            pattern = dm.lastPatternBeforeFill;
+            dm.lastPatternBeforeFill = 0;
             setPattern(dm, pattern);
             updatePattern(dm);
         }
@@ -321,9 +320,12 @@ void setPlayMode(DrumMachine &dm, int mode)
 
     dm.lastMode = dm.playMode;
     dm.playMode = mode;
+    resetAudioPlayback(dm);
     if (mode == PLAY_MODE_PATTERN)
-    {
+    {                
         updatePattern(dm);
+        // force a mix
+        feedPatternBuffers(dm);
     }
     if (mode == PLAY_MODE_PREVIEW)
     {
