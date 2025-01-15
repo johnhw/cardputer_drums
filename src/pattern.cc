@@ -92,11 +92,16 @@ void getCursorChar(DrumMachine &dm, char &ch, int16_t &velocity)
 {
     int index = dm.cursor.step + nSteps * dm.cursor.chan;
     int step = dm.currentPattern[index].type;
-
+    
     if (step < 'a' || step > 'z')
         ch = '.';
     else
-        ch = (char)step;
+    {
+        if(step=='z')
+            ch = '#';
+        else
+            ch = (char)step;
+    }
 
     velocity = dm.currentPattern[index].velocity;
 }
@@ -173,7 +178,7 @@ int32_t getKickDelay(DrumMachine &dm, int16_t step, int16_t chan)
 sample_t *getSample(DrumMachine &dm, int16_t sampleIndex)
 {
     int ix = sampleIndex - '`';
-    if (ix <= 0 || ix >= 26)
+    if (ix <= 0 || ix >= 25)
         return nullptr;
     return &dm.drumSamples[ix];
 }

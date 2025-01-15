@@ -11,7 +11,7 @@ This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stac
 
 * 16KHz sample rate
 * 16 steps, 8 tracks
-* 20 patterns
+* 36 patterns
 * Swing/shuffle
 * Channel mute/solos
 * Per-step velocity and sub-tick timing adjustment
@@ -20,7 +20,8 @@ This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stac
 * Multiple drum kits
 * Live keydrumming mode
 * Render to SD card
-* Sampled drum kits
+* Sampled drum kits from SD card
+* Pitching and tuning
 * Tap tempo
 
 ## UI
@@ -37,7 +38,11 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * **SW** current swing (0-99; about 20-30 is useful)
 * **VOL** volume (0-16)
 * **KT** kit selected 
-* **12345678** channel enabled status. Mute'd channels are grayed. Solo'd channels are red. 
+* At the right Current note: NNN VV KK FX
+    * NNN: note name, like `C#4`
+    * VV: velocity (0-9)
+    * KK: kick timing (0-11)
+    * FX: effect name
 
 ## Controls
 
@@ -53,6 +58,12 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `fn+shift+→` rotate current channel right
 * `shift+[` kick current channel one 1/12 step left
 * `shift+]` kick current channel one 1/12 step right
+
+* `ctrl+key` set note pitch. `q`=middle C. Piano keyboard layout: `q2we4r5ty7u8i9op` for the top octave, `zsxdcvgbhnjm` for the bottom octave.
+* `ctrl+[` decrease pitch by 10 cents
+* `ctrl+]` increase pitch by 10 cents
+* `ctrl+↑` increase pitch by 1 octave
+* `ctrl+↓` decrease pitch by 1 octave
 
 
 ### Global
@@ -86,7 +97,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `opt+DEL` delete pattern at cursor
 
 ### channel
-* `fn+k` enter keydrumming mode. Press keys to play the drum sounds. Press `fn+k` to exit keydrumming mode. (note: red circle at bottom indicates live keydrumming mode). Shift-K enables step-quantized keydrumming mode.
+* `fn+k` enter keydrumming mode. Press keys to play the drum sounds. Press `fn+k` to exit keydrumming mode. (note: red circle at bottom indicates live keydrumming mode). `Fn-shift-K` enables **quantized** keydrumming mode.
 * `fn+<n>` toggle mute channel `n` (1-8)
 * `fn+shift+<n>` toggle solo channel `n` (multiple channels can be solo'd)
 * `fn+enter` toggle solo the current channel (where the cursor is)
@@ -98,6 +109,8 @@ The dot grid indicates the 16x8 steps for the current pattern.
 ### Kits
 * `alt+<x>` select drum kit `x` (note: this will cause a delay as the kit is synthesised/loaded)
     * Only kits 1-4 are available w/o an SD card.
+
+Note: you can create custom sampled kits by placing WAV files in `/bonnethead/kits/base-<n>.kit` on the SD card. (e.g. `/bonnethead/kits/base-9.kit`). Each WAV should be named `a.wav` through `y.wav` (any can be omitted, and will just be skipped). The kit will be loaded as `9` when you press `alt+9` in this example. `5-9a-z` are available for custom kits (1-4 are synthesised). WAV files should be 16-bit, 16KHz mono.
 
 ### clipboard
 * `fn+d` delete current pattern
@@ -126,15 +139,31 @@ The dot grid indicates the 16x8 steps for the current pattern.
 
 ## Preview mode
 
+In preview mode, samples can be played with `a-z`. The current sample is displayed at the top of the screen. Press `Button A` to return to pattern mode.
+
+Parameters can be edited:
+* `detune` (cents)
+* `cutoff` (0-1000)
+* `volume` (-5000-5000) centibels
+* `start` start point in samples
+* `end` end point in samples
+* `lp start` loop start point in samples (note: enabled if loop start!=loop end)
+* `lp end` loop end point in samples
+* `attack` attack time in ms
+* `decay` decay time in ms
+* `sustain` sustain level in centibels
+* `release` release time in ms
+
+### Keys
 * `fn+s` <n> save kit
 * `fn+o` <n> load kit
 * `fn+n` reset kit
-* `opt` hold for fine adjust
-* `alt` hold for coarse adjust
-* `alt+opt` hold for very coarse adjust
-* `↑` increase value
-* `↓` decrease value
-* ` ` reset parameter
+* `opt` hold for fine adjust (+/- 1)
+* `alt` hold for coarse adjust (+/- 100)
+* `alt+opt` hold for very coarse adjust (+/- 1000)
+* `↑` increase value (+/- 10 by default)
+* `↓` decrease value (+/- 10 by default)
+* ` ` reset parameter to 0
 * `←` previous parameter
 * `→` next parameter 
 

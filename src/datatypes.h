@@ -2,6 +2,7 @@
 #define DATATYPES_H
 #include <stdint.h>
 #include "config.h"
+#include "adsr.h"
 
 // one channel
 typedef struct channel_t
@@ -56,6 +57,7 @@ typedef struct chanData_t
   int32_t kickDelay; // additional delay, in kickSubdiv units
   int8_t fx;         // effect to apply
   int32_t detune;    // detune in cents
+  float probability; // probability of playing this step
 } chanData_t;
 
 // the cursor location/flash state
@@ -83,6 +85,13 @@ typedef struct fxData
   bool reverse;
 } fxData;
 
+enum LOOP_STATE
+{
+  LOOP_NONE,
+  LOOP_LOOPING,
+  LOOP_RELEASE,
+};
+
 // data for mixing one channel into the final mix
 typedef struct mixData_t
 {
@@ -102,6 +111,8 @@ typedef struct mixData_t
   int32_t channelDetune;         // detune for this channel
   int32_t channelCutoff;         // cutoff for this channel
   fxData fx;                     // current FX data
+  adsr_t adsr;              // current ADSR state
+  int8_t loopState;                   // are we in a loop?
 } mixData_t;
 
 typedef struct previewData_t

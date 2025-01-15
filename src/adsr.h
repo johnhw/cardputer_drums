@@ -1,3 +1,5 @@
+#ifndef ADSR_H
+#define ADSR_H
 #include <math.h>
 #include <stdio.h>
 
@@ -19,6 +21,7 @@ typedef enum
  */
 typedef struct
 {
+    bool enabled;
     float samplerate;
 
     // User-specified times and sustain-level (in dB).
@@ -41,3 +44,11 @@ typedef struct
     // Current state of the envelope.
     adsr_state_t state;
 } adsr_t;
+
+void releaseADSR(adsr_t *adsr);
+float nextADSR(adsr_t *adsr);
+void triggerADSR(adsr_t *adsr);
+void initADSR(adsr_t *adsr,
+              float a_ms, float d_ms, float s_db, float r_ms,
+              int samplerate);
+#endif

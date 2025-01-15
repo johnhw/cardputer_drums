@@ -26,7 +26,7 @@ static float computeCoef(float startAmp, float endAmp, float numSamples)
 // Times are in milliseconds, sustain in dB, samplerate in Hz.
 void initADSR(adsr_t *adsr,
               float a_ms, float d_ms, float s_db, float r_ms,
-              float samplerate)
+              int samplerate)
 {
     adsr->samplerate = samplerate;
 
@@ -69,6 +69,7 @@ void triggerADSR(adsr_t *adsr)
 {
     adsr->env = MIN_ADSR_AMPLITUDE; // -90 dB
     adsr->state = ADSR_STATE_ATTACK;
+    adsr->enabled = true;
 }
 
 // Begin the Release phase (envelope goes from current level down to -90 dB).

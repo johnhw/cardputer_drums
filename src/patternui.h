@@ -31,4 +31,5 @@ void patternRefresh(DrumMachine & dm);
 void temporaryLowerMessage(DrumMachine &dm, const char *msg);
 void noModifierKey(DrumMachine &dm, Keyboard_Class::KeysState status);
 void altKey(DrumMachine &dm, Keyboard_Class::KeysState status);
+void drawNoteDetails(DrumMachine &dm);
 #endif

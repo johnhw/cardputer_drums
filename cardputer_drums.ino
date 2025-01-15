@@ -26,14 +26,13 @@
 // CHESNEY HAWKES MODE
 // beat slicer? // audio recording
 // fix pattern switch visual sync (off by 1/2 beat)
-  // Loop samples: Add envelopes. 
-// flams: double flam, triple flam, roll, reverse. UI, audio rendering
-// UI for step and channel tuning. Ctrl +note to set pitch (piano keyboard). Ctrl </> to set octave. Ctrl [ / ] to set finetune. Ctrl-space to clear
+// flams: double flam, triple flam, roll, reverse. audio rendering
+// UI for channel tuning.
 // Ctrl-Shift-<n> to set probability
 // allow blank samples to change volume/pitch
-// add stop note sample/step ('#') (trigger release)
+// add stop note sample/step ('#') (trigger release) / continuation note
 // add glide for pitch?
-
+// save load kits preview
 
 // maybe:
 

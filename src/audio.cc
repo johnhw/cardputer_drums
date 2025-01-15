@@ -7,6 +7,7 @@
 #include "pattern.h"
 #include "ui.h"
 #include "flash.h"
+#include "adsr.h"
 
 // threshold is 0.0 to 1.0. all other values in samples
 int32_t findSampleEnd(int16_t *sample, int32_t len, int32_t win, double threshold)
@@ -163,11 +164,19 @@ void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
     mx->stepIndex = mx->nextIndex;
     sample_t *newSample;
     int32_t index = ch->type;
+    if (index == 26)
+    {
+        // note off
+        mx->loopState = LOOP_RELEASE;
+        releaseADSR(&mx->adsr);
+        return;
+    }
     newSample = getSample(dm, index);
     if (newSample != nullptr) // cutoff if there's a new sample to start (do nothing otherwise)
     {
         mx->currentSample = newSample;
         mx->currentVelocity = ch->velocity;
+        mx->loopState = LOOP_NONE;
         // add cumulative detune from the sample itself, and the channel tuning
         mx->totalDetune = newSample->adjustments.detune + ch->detune + mx->channelDetune;
         mx->freqIncrement = freqIncrement(mx->totalDetune); // compute the actual step increment
@@ -179,6 +188,18 @@ void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
         float sampleCutoff = (1 - newSample->adjustments.cutoff / 1000.0);
         float cutoff = min(channelCutoff, sampleCutoff);
         mx->filterAlpha = iirAlpha(cutoff * cutoff); // square the cutoff for a more linear response
+        // apply envelope, if one is set
+        sample_adjustment_t *adj = &newSample->adjustments;
+
+        if (adj->attackTime != 0 || adj->decayTime != 0 || adj->sustainLevel != 0 || adj->releaseTime != 0)
+        {
+            initADSR(&mx->adsr, adj->attackTime, adj->decayTime, adj->sustainLevel / 10.0, adj->releaseTime, samplerate);
+            triggerADSR(&mx->adsr);
+        }
+        else
+        {
+            mx->adsr.enabled = false;
+        }
     }
 }
 
@@ -192,12 +213,22 @@ float mixCurrentSample(mixData_t *mx)
         mx->sampleIndex = mx->fractionalSampleIndex / 32768;
         if (mx->sampleIndex >= 0) // skip if we have a negative index (delayed start)
             in = mx->currentSample->samples[mx->sampleIndex] * mx->totalGain;
+        if (mx->adsr.enabled)
+        {
+            in *= mx->adsr.env;
+            mx->adsr.env = nextADSR(&mx->adsr);
+        }
         mx->currentFilter = mx->filterAlpha * mx->currentFilter + (1.0f - mx->filterAlpha) * in;
         in = mx->currentFilter;
 
         sample_adjustment_t *adj = &mx->currentSample->adjustments;
-        // loop, if required (TODO: need to add noteoff logic here)
-        if (adj->loopEnabled && mx->sampleIndex >= adj->loopEnd)
+        // set the loop flag
+        if (mx->sampleIndex >= adj->loopStart && adj->loopEnabled && mx->loopState == LOOP_NONE)
+        {
+            mx->loopState = LOOP_LOOPING;
+        }
+        // loop, if required
+        if (mx->loopState == LOOP_LOOPING && adj->loopEnabled && mx->sampleIndex >= mx->currentSample->len - adj->loopEnd)
         {
             mx->sampleIndex = adj->loopStart;
             mx->fractionalSampleIndex = mx->sampleIndex * 32768;

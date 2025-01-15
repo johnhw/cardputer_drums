@@ -129,6 +129,22 @@ int32_t getKeyboardPianoCents()
   return index * 100;
 }
 
+// buf must have at least 4 characters!
+void centsToNoteName(int32_t cents, char *buf)
+{
+  int32_t note = (cents + 50 + 4800) / 100; // truncate to semitone
+  int32_t octave = note / 12;
+  int32_t noteInOctave = note % 12;
+  // make sure remainder is positive
+  if (noteInOctave < 0)
+    noteInOctave += 12;
+  const char *name = noteNames[noteInOctave];
+  // limit octave to 0-9
+  if(octave<0) octave = 0;
+  if(octave>9) octave = 9;
+  snprintf(buf, 4, "%s%d", name, octave);
+}
+
 // show which modifiers are pressed
 void drawModifierKeys(int32_t backgroundColor)
 {

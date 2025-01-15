@@ -25,7 +25,7 @@ void setArenaTop(arena_t *arena, void *top);
 int32_t getArenaFree(arena_t *arena);
 float cBGain(float cb);
 void drawModifierKeys(int32_t backgroundColor);
-
+void centsToNoteName(int32_t cents, char *buf);
 int32_t getKeyboardPianoCents();
 
 #endif

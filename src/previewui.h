@@ -42,7 +42,7 @@ const int32_t paramLimits[PARAM_N][2] = {
     {0, MAX_SAMPLE_ADJUST},                  // loop end
     {0, 5000},                               // attack
     {0, 5000},                               // decay
-    {0, 1000},                               // sustain
+    {-1000, 1000},                               // sustain
     {0, 5000}                                // release
 };
 
