@@ -44,6 +44,7 @@ extern const String ASCIIDance[];
 const char alphaNumericChars[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 const char shiftAlphaNumericChars[] = ")!@#$%^&*(ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const char digitChars[] = "0123456789";
+const char shiftDigitChars[] = ")!@#$%^&*(";
 
 // keyboard layout (piano style)
 const char keyboardSemitoneSequence[] = "zsxdcvgbhnjmq2w3er5t6y7ui9o0p";
@@ -55,5 +56,6 @@ extern const char *fxNames [];
 
 // logit spaced probabilities for notes
 extern const float probabilityTable[];
+
 
 #endif

@@ -74,6 +74,11 @@ int16_t getDigitPressed(Keyboard_Class::KeysState status)
   return getKeyIndex(digitChars);
 }
 
+int16_t getShiftDigitPressed(Keyboard_Class::KeysState status)
+{
+  return getKeyIndex(shiftDigitChars);
+}
+
 float iirAlpha(float normFreq)
 {
   float wc = 2 * M_PI * normFreq;
@@ -122,9 +127,9 @@ void lowerMessage(const char *message)
 int32_t getKeyboardPianoCents()
 {
   int32_t index = getKeyIndex(shiftKeyboardSemitoneSequence); // ctrl reads as shift?
-  if(index==-1)
+  if (index == -1)
     index = getKeyIndex(keyboardSemitoneSequence);
-  if(index==-1)
+  if (index == -1)
     return -1;
   return index * 100;
 }
@@ -140,8 +145,10 @@ void centsToNoteName(int32_t cents, char *buf)
     noteInOctave += 12;
   const char *name = noteNames[noteInOctave];
   // limit octave to 0-9
-  if(octave<0) octave = 0;
-  if(octave>9) octave = 9;
+  if (octave < 0)
+    octave = 0;
+  if (octave > 9)
+    octave = 9;
   snprintf(buf, 4, "%s%d", name, octave);
 }
 

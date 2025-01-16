@@ -92,8 +92,7 @@ void getCursorChar(DrumMachine &dm, char &ch, int16_t &velocity)
 {
     int index = dm.cursor.step + nSteps * dm.cursor.chan;
     int step = dm.currentPattern[index].type;
-    
-    if (step < 'a' || step > 'z')
+    if (step < '`' || step > 'z')
         ch = '.';
     else
     {

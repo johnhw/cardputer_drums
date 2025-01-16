@@ -26,13 +26,9 @@
 // CHESNEY HAWKES MODE
 // beat slicer? // audio recording
 // fix pattern switch visual sync (off by 1/2 beat)
-// flams: double flam, triple flam, roll, reverse. audio rendering
-// UI for channel tuning.
-// Ctrl-Shift-<n> to set probability
-// allow blank samples to change volume/pitch
-// add stop note sample/step ('#') (trigger release) / continuation note
-// add glide for pitch?
+// flams: double flam, triple flam, roll, reverse. 
 // save load kits preview
+// fix color cursor wrap in low-velcotiy
 
 // maybe:
 

@@ -135,6 +135,7 @@ void resetMixChannel(mixData_t *mx)
     mx->fractionalSampleIndex = 0;
     mx->channelDetune = 0;
     mx->channelCutoff = 0;
+    mx->smoothFreqIncrement = 32768;
     resetFX(&mx->fx);
 }
 
@@ -156,7 +157,22 @@ void resetMix(DrumMachine &dm)
         mx->channelGain = powf(1.4142, (ch->volume - 8));
         mx->channelDetune = ch->detune;
         mx->channelCutoff = ch->filterCutoff;
+        
     }
+}
+
+void setDetuneVelocity(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
+{
+    if(!mx->currentSample)
+        return;
+     mx->currentVelocity = ch->velocity;
+     mx->portaCoeff = 1-exp(-ch->portaTime*2);
+    // target detune state includes this step
+    mx->totalDetune = mx->currentSample->adjustments.detune + ch->detune + mx->channelDetune;
+    mx->freqIncrement = freqIncrement(mx->totalDetune); // compute the target step increment
+    if(ch->portaTime==0) // no portamento, just set the increment
+        mx->smoothFreqIncrement = mx->freqIncrement;
+    mx->totalGain = mx->channelGain * mx->currentVelocity * cBGain(mx->currentSample->adjustments.volume);
 }
 
 void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
@@ -164,7 +180,13 @@ void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
     mx->stepIndex = mx->nextIndex;
     sample_t *newSample;
     int32_t index = ch->type;
-    if (index == 26)
+    if(index == '`')
+    {
+        // note "continue" - change velocity and portamento target
+        setDetuneVelocity(dm, mx, ch);
+        return;
+    }
+    if (index == 'z')
     {
         // note off
         mx->loopState = LOOP_RELEASE;
@@ -174,15 +196,12 @@ void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
     newSample = getSample(dm, index);
     if (newSample != nullptr) // cutoff if there's a new sample to start (do nothing otherwise)
     {
-        mx->currentSample = newSample;
-        mx->currentVelocity = ch->velocity;
-        mx->loopState = LOOP_NONE;
-        // add cumulative detune from the sample itself, and the channel tuning
-        mx->totalDetune = newSample->adjustments.detune + ch->detune + mx->channelDetune;
-        mx->freqIncrement = freqIncrement(mx->totalDetune); // compute the actual step increment
-        mx->fractionalSampleIndex = mx->freqIncrement * newSample->adjustments.trimStart;
+        mx->currentSample = newSample;       
+        setDetuneVelocity(dm, mx, ch);
+        mx->loopState = LOOP_NONE;                        
+        mx->fractionalSampleIndex = 32768 * newSample->adjustments.trimStart;
         // gain is product of channel gain, step velocity and sample gain
-        mx->totalGain = mx->channelGain * mx->currentVelocity * cBGain(newSample->adjustments.volume);
+        
         // sample cutoff is min of channel and sample cutoff
         float channelCutoff = (float)(maxFilterCutoff - mx->channelCutoff) / (float)maxFilterCutoff;
         float sampleCutoff = (1 - newSample->adjustments.cutoff / 1000.0);
@@ -193,6 +212,7 @@ void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
 
         if (adj->attackTime != 0 || adj->decayTime != 0 || adj->sustainLevel != 0 || adj->releaseTime != 0)
         {
+            // / 10 to convert cB to dB
             initADSR(&mx->adsr, adj->attackTime, adj->decayTime, adj->sustainLevel / 10.0, adj->releaseTime, samplerate);
             triggerADSR(&mx->adsr);
         }
@@ -209,7 +229,7 @@ float mixCurrentSample(mixData_t *mx)
     // copy in the sample, if there's more to copy
     if (mx->currentSample && mx->currentSample->len != 0)
     {
-        mx->fractionalSampleIndex += mx->freqIncrement;
+        mx->fractionalSampleIndex += (int32_t)mx->smoothFreqIncrement;
         mx->sampleIndex = mx->fractionalSampleIndex / 32768;
         if (mx->sampleIndex >= 0) // skip if we have a negative index (delayed start)
             in = mx->currentSample->samples[mx->sampleIndex] * mx->totalGain;
@@ -220,6 +240,8 @@ float mixCurrentSample(mixData_t *mx)
         }
         mx->currentFilter = mx->filterAlpha * mx->currentFilter + (1.0f - mx->filterAlpha) * in;
         in = mx->currentFilter;
+
+        mx->smoothFreqIncrement = mx->smoothFreqIncrement * mx->portaCoeff + mx->freqIncrement * (1 - mx->portaCoeff);
 
         sample_adjustment_t *adj = &mx->currentSample->adjustments;
         // set the loop flag
@@ -290,7 +312,10 @@ void triggerPreviewSample(DrumMachine &dm, int index)
         .velocity = 8,
         .kickDelay = 0,
         .fx = FX_NONE,
-        .detune = dm.previewData.detune};
+        .detune = dm.previewData.detune,
+        .probability = 0,
+        .portaTime = 0,
+        };
     resetMixChannel(&dm.previewData.previewMix);
     mixTriggerSample(dm, &dm.previewData.previewMix, &dm.previewData.previewChan);
 }

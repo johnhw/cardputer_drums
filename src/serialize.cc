@@ -1,7 +1,7 @@
 // stores and retrieves DrumMachine data
 #include "serialize.h"
 
-#define SERIALIZE_ID 0xBEA102
+#define SERIALIZE_ID 0xBEA104
 
 // write a single integer to the string, followed by a comma
 void addToken(File ser, int32_t value)
@@ -82,6 +82,30 @@ bool writeSampleAdjustments(DrumMachine &dm, File &ser)
     return true;
 }
 
+/* read a single step of a pattern from the file */
+bool readStep(chanData_t *step, File &ser)
+{
+    step->type = getToken(ser);
+    step->velocity = getToken(ser);
+    step->kickDelay = getToken(ser);
+    step->fx = getToken(ser);
+    step->detune = getToken(ser);
+    step->portaTime = getToken(ser);
+    return true;
+}
+
+/* write a single step of a pattern to the file */
+bool writeStep(chanData_t *step, File &ser)
+{
+    addToken(ser, step->type);
+    addToken(ser, step->velocity);
+    addToken(ser, step->kickDelay);
+    addToken(ser, step->fx);
+    addToken(ser, step->detune);
+    addToken(ser, step->portaTime);
+    return true;
+}
+
 /* read the pattern data from the file */
 bool readPatterns(DrumMachine &dm, File &ser)
 {
@@ -99,11 +123,8 @@ bool readPatterns(DrumMachine &dm, File &ser)
 
     for (int i = 0; i < nSteps * nChans * maxPatterns; i++)
     {
-        dm.allPatterns[i].type = getToken(ser);
-        dm.allPatterns[i].velocity = getToken(ser);
-        dm.allPatterns[i].kickDelay = getToken(ser);
+        readStep(&dm.allPatterns[i], ser);        
     }
-
     return true;
 }
 
@@ -114,9 +135,7 @@ bool writePatterns(DrumMachine &dm, File &ser)
     addToken(ser, nSteps * nChans * maxPatterns);
     for (int i = 0; i < nSteps * nChans * maxPatterns; i++)
     {
-        addToken(ser, dm.allPatterns[i].type);
-        addToken(ser, dm.allPatterns[i].velocity);
-        addToken(ser, dm.allPatterns[i].kickDelay);
+       writeStep(&dm.allPatterns[i], ser);
     }
     return true;
 }
@@ -164,31 +183,61 @@ bool writeChannels(DrumMachine &dm, File &ser)
     return true;
 }
 
-bool writeDrumMachine(DrumMachine &dm, File &ser)
+bool writeConfiguration(DrumMachine &dm, File &ser)
 {
-    char *buf;
-    addToken(ser, SERIALIZE_ID);
     addToken(ser, dm.bpm);
     addToken(ser, dm.swing);
     addToken(ser, dm.pattern);
     addToken(ser, dm.kit);
     addToken(ser, dm.volume);
     addToken(ser, dm.patternMode);
+    return true;
+}
 
+bool writePatternSequence(DrumMachine &dm, File &ser)
+{
     addToken(ser, strlen(dm.patternSequence));
-
     for (int i = 0; i < strlen(dm.patternSequence); i++)
     {
         addToken(ser, dm.patternSequence[i]);
     }
+    return true;
+}
 
+bool writeDrumMachine(DrumMachine &dm, File &ser)
+{
+    char *buf;
+    addToken(ser, SERIALIZE_ID);
+    writeConfiguration(dm, ser);
+    writePatternSequence(dm, ser);       
     writeChannels(dm, ser);
     writePatterns(dm, ser);
     writeSampleAdjustments(dm, ser);
-
     addToken(ser, 0);
-
     return true;
+}
+
+/* Read the global configuration from the file */
+bool readConfiguration(DrumMachine &dm, File &ser)
+{
+    dm.bpm = getToken(ser);
+    dm.swing = getToken(ser);
+    dm.pattern = getToken(ser);
+    dm.kit = getToken(ser);
+    dm.volume = getToken(ser);
+    dm.patternMode = getToken(ser);
+}
+
+bool readPatternSequence(DrumMachine &dm, File &ser)
+{
+    int len = getToken(ser);
+    char patternSequence[len + 1];
+    for (int i = 0; i < len; i++)
+    {
+        patternSequence[i] = getToken(ser);
+    }
+    patternSequence[len] = '\0';
+    strcpy(dm.patternSequence, patternSequence);
 }
 
 bool readDrumMachine(DrumMachine &dm, File &ser)
@@ -198,27 +247,16 @@ bool readDrumMachine(DrumMachine &dm, File &ser)
     int32_t id;
     id = getToken(ser);
 
+    // verify magic number
     if (id != SERIALIZE_ID)
     {
         Serial.println("Invalid serialize ID");
         return false;
     }
-    dm.bpm = getToken(ser);
-    dm.swing = getToken(ser);
-    dm.pattern = getToken(ser);
-    dm.kit = getToken(ser);
-    dm.volume = getToken(ser);
-    dm.patternMode = getToken(ser);
 
-    int len = getToken(ser);
-    char patternSequence[len + 1];
-    for (int i = 0; i < len; i++)
-    {
-        patternSequence[i] = getToken(ser);
-    }
-    patternSequence[len] = '\0';
-    strcpy(dm.patternSequence, patternSequence);
-
+    readConfiguration(dm, ser);
+    readPatternSequence(dm, ser);
+    
     readChannels(dm, ser);
     readPatterns(dm, ser);
     readSampleAdjustments(dm, ser);

@@ -21,7 +21,8 @@ This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stac
 * Live keydrumming mode
 * Render to SD card
 * Sampled drum kits from SD card
-* Pitching and tuning
+* Pitching and tuning, including portamento
+* Loops
 * Tap tempo
 
 ## UI
@@ -38,11 +39,12 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * **SW** current swing (0-99; about 20-30 is useful)
 * **VOL** volume (0-16)
 * **KT** kit selected 
-* At the right Current note: NNN VV KK FX
+* At the right Current note: NNN VV KK FX P
     * NNN: note name, like `C#4`
     * VV: velocity (0-9)
     * KK: kick timing (0-11)
     * FX: effect name
+    * P: portamento time (0-9) 0=off, 9=slowest
 
 ## Controls
 
@@ -64,6 +66,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `ctrl+]` increase pitch by 10 cents
 * `ctrl+↑` increase pitch by 1 octave
 * `ctrl+↓` decrease pitch by 1 octave
+* `ctrl+shift+<n>` set portamento time to 0-9 (0=off, 9=slowest). Default is 0
 
 
 ### Global
@@ -136,6 +139,8 @@ Note: you can create custom sampled kits by placing WAV files in `/bonnethead/ki
 * `s` cowbell
 * `t` damped bell
 * `u` crash
+* `z` Note off (appears as `#`)
+* `,` Note continue (appears as '). This can be used to slide notes or change velocity without retriggering the sample.
 
 ## Preview mode
 

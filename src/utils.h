@@ -27,5 +27,6 @@ float cBGain(float cb);
 void drawModifierKeys(int32_t backgroundColor);
 void centsToNoteName(int32_t cents, char *buf);
 int32_t getKeyboardPianoCents();
+int16_t getShiftDigitPressed(Keyboard_Class::KeysState status);
 
 #endif

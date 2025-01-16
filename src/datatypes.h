@@ -57,7 +57,8 @@ typedef struct chanData_t
   int32_t kickDelay; // additional delay, in kickSubdiv units
   int8_t fx;         // effect to apply
   int32_t detune;    // detune in cents
-  float probability; // probability of playing this step
+  int16_t probability; // probability of playing this step (in logits)
+  int16_t portaTime; // portamento time 0-9
 } chanData_t;
 
 // the cursor location/flash state
@@ -110,6 +111,8 @@ typedef struct mixData_t
   int32_t freqIncrement;         // frequency increment for the sample (32768.0 is a frequency of 1.0)
   int32_t channelDetune;         // detune for this channel
   int32_t channelCutoff;         // cutoff for this channel
+  float smoothFreqIncrement;    // smooth detune for portamento
+  float portaCoeff;               // portamento coefficient
   fxData fx;                     // current FX data
   adsr_t adsr;              // current ADSR state
   int8_t loopState;                   // are we in a loop?

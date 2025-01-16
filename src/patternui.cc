@@ -286,6 +286,8 @@ void noModifierKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   {
     cycleCursorFX(dm);
   }
+   if (M5Cardputer.Keyboard.isKeyPressed('\''))
+    setCursorChar(dm, '`');
 
   // tap tempo
   if (M5Cardputer.Keyboard.isKeyPressed(' '))
@@ -401,9 +403,15 @@ void ctrlKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   }
   if(status.shift)
   {
-
+    int32_t ix = getShiftDigitPressed(status);
+    if(ix!=-1)
+    {
+      chanData_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
+      if(!step) return; 
+      step->portaTime = ix;
+      requestMix(dm);
+    }
   }
-
 }
 
 void patternModeKeys(DrumMachine &dm)
@@ -727,8 +735,9 @@ void renderCursor(DrumMachine &dm, int state)
   int16_t vel;
   getCursorChar(dm, ch, vel);
   s[0] = ch;
-
-  int16_t charColor = RGB565(0, vel * 2 - ((dm.cursor.step % 2) ? 0 : 8), 0);
+  int16_t greenLevel = vel * 2 - ((dm.cursor.step % 2) ? 6 : 0);
+  if(greenLevel<0) greenLevel = 0;
+  int16_t charColor = RGB565(0, greenLevel, 0);
   int boxOffX = -4;
   int boxOffY = -2;
   int boxX = drawX + boxOffX;
@@ -892,10 +901,11 @@ void drawKitLoading(DrumMachine &dm, int kit)
 void drawNoteDetails(DrumMachine &dm)
 {
    int statusHeight = 16;
+   int noteBoxX = 165;
   M5Cardputer.Display.setFont(&fonts::Font0);  
   M5Cardputer.Display.setTextColor(GREEN);
    // draw current step display
-   M5Cardputer.Display.fillRect(172, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_BLACK);
+   M5Cardputer.Display.fillRect(noteBoxX, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_BLACK);
   chanData_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
   char noteBuf[8];
   char statusBuf[64];
@@ -905,8 +915,8 @@ void drawNoteDetails(DrumMachine &dm)
     int32_t fx = step->fx;
     if(fx<0 || fx>=FX_N) // limit FX to valid range
       fx = 0;    
-    snprintf(statusBuf, 64, "%s %d %02d %2s", noteBuf, step->velocity, step->kickDelay, fxNames[step->fx]);
-    M5Cardputer.Display.drawString(statusBuf, 172, M5Cardputer.Display.height() - statusHeight);
+    snprintf(statusBuf, 64, "%s %d %02d %01d %2s", noteBuf, step->velocity, step->kickDelay, step->portaTime, fxNames[step->fx]);
+    M5Cardputer.Display.drawString(statusBuf, noteBoxX, M5Cardputer.Display.height() - statusHeight);
   }
 }
 
