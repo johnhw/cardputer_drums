@@ -226,18 +226,20 @@ bool readConfiguration(DrumMachine &dm, File &ser)
     dm.kit = getToken(ser);
     dm.volume = getToken(ser);
     dm.patternMode = getToken(ser);
+    return true;
 }
 
 bool readPatternSequence(DrumMachine &dm, File &ser)
 {
     int len = getToken(ser);
-    char patternSequence[len + 1];
+    char patternSequence[128];
     for (int i = 0; i < len; i++)
     {
         patternSequence[i] = getToken(ser);
     }
     patternSequence[len] = '\0';
     strcpy(dm.patternSequence, patternSequence);
+    return true;
 }
 
 bool readDrumMachine(DrumMachine &dm, File &ser)
@@ -252,14 +254,12 @@ bool readDrumMachine(DrumMachine &dm, File &ser)
     {
         Serial.println("Invalid serialize ID");
         return false;
-    }
-
+    }    
     readConfiguration(dm, ser);
-    readPatternSequence(dm, ser);
-    
-    readChannels(dm, ser);
-    readPatterns(dm, ser);
-    readSampleAdjustments(dm, ser);
+    readPatternSequence(dm, ser);    
+    readChannels(dm, ser);    
+    readPatterns(dm, ser);    
+    readSampleAdjustments(dm, ser);    
 
     int end = getToken(ser);
     if (end != 0)
@@ -270,3 +270,46 @@ bool readDrumMachine(DrumMachine &dm, File &ser)
 
     return true;
 }
+
+void setKit(DrumMachine &dm, int kit);
+
+bool serialiseKit(DrumMachine &dm, File &ser)
+{
+   
+    addToken(ser, SERIALIZE_ID);
+    addToken(ser, 0xad00d);
+    addToken(ser, dm.kit);
+    writeSampleAdjustments(dm, ser);
+    addToken(ser, 0);
+    return true;
+}
+
+bool deserialiseKit(DrumMachine &dm, File &ser)
+{
+    int32_t id = getToken(ser);
+    if (id != SERIALIZE_ID)
+    {
+        Serial.println("Invalid serialize ID");
+        return false;
+    }
+
+    int32_t check = getToken(ser);
+    if (check != 0xad00d)
+    {
+        Serial.println("Invalid sample adjustment ID");
+        return false;
+    }
+
+    int32_t kit = getToken(ser);
+    readSampleAdjustments(dm, ser);
+
+    int32_t end = getToken(ser);
+    if (end != 0)
+    {
+        Serial.println("Invalid end token");
+        return false;
+    }
+
+    return true;
+}
+

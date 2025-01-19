@@ -19,4 +19,6 @@ void initState(DrumMachine &dm);
 bool loadDrumMachine(DrumMachine &dm, String &fname);
 bool saveDrumMachine(DrumMachine &dm, String &fname);
 bool renderPattern(DrumMachine &dm);
+bool saveSampleAdjustments(DrumMachine &dm, int32_t bank);
+bool loadSampleAdjustments(DrumMachine &dm, int32_t bank);
 #endif

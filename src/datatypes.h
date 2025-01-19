@@ -54,11 +54,11 @@ typedef struct chanData_t
 {
   int16_t type;
   int16_t velocity;
-  int32_t kickDelay; // additional delay, in kickSubdiv units
-  int8_t fx;         // effect to apply
-  int32_t detune;    // detune in cents
+  int32_t kickDelay;   // additional delay, in kickSubdiv units
+  int8_t fx;           // effect to apply
+  int32_t detune;      // detune in cents
   int16_t probability; // probability of playing this step (in logits)
-  int16_t portaTime; // portamento time 0-9
+  int16_t portaTime;   // portamento time 0-9
 } chanData_t;
 
 // the cursor location/flash state
@@ -111,11 +111,11 @@ typedef struct mixData_t
   int32_t freqIncrement;         // frequency increment for the sample (32768.0 is a frequency of 1.0)
   int32_t channelDetune;         // detune for this channel
   int32_t channelCutoff;         // cutoff for this channel
-  float smoothFreqIncrement;    // smooth detune for portamento
-  float portaCoeff;               // portamento coefficient
+  float smoothFreqIncrement;     // smooth detune for portamento
+  float portaCoeff;              // portamento coefficient
   fxData fx;                     // current FX data
-  adsr_t adsr;              // current ADSR state
-  int8_t loopState;                   // are we in a loop?
+  adsr_t adsr;                   // current ADSR state
+  int8_t loopState;              // are we in a loop?
 } mixData_t;
 
 typedef struct previewData_t
@@ -130,7 +130,7 @@ typedef struct previewData_t
 
 struct DrumMachine
 {
-  sample_t drumSamples[27];
+  sample_t drumSamples[maxSamples];
   int16_t *audioBuffers[N_BUFFERS]; // double buffering
   int32_t maxBufferLen;             // true (max) length of one buffer
   int16_t *bufferA, *bufferB;       // the two buffers

@@ -113,6 +113,8 @@ float cBGain(float cb)
 void lowerMessage(const char *message)
 {
   int statusHeight = 16;
+  // set origin
+  M5Cardputer.Display.setTextDatum(top_left);
   M5Cardputer.Display.setTextColor(BLACK);
   M5Cardputer.Display.setFont(&fonts::Font2);
   M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_GREEN);

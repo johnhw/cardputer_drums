@@ -22,13 +22,11 @@
 
 // TODO:
 
-// chiptunes kits
-// CHESNEY HAWKES MODE
-// beat slicer? // audio recording
+// beat slicer? 
+// fix waveform not showing
+// sort out kit loading / saving adjustments
 // fix pattern switch visual sync (off by 1/2 beat)
 // flams: double flam, triple flam, roll, reverse. 
-// save load kits preview
-// fix color cursor wrap in low-velcotiy
 
 // maybe:
 
@@ -50,7 +48,6 @@
 #include "src/patternui.h"
 #include "src/previewui.h"
 #include "src/flash.h"
-#include "data/routed_7.h"
 
 // Function Declarations
 void initCardputer();
@@ -81,7 +78,7 @@ void splash()
   splashSprite.setTextDatum(top_center);
   splashSprite.setTextColor(TFT_BLACK);
   splashSprite.drawString("BONNETHEAD", M5Cardputer.Display.width() / 2 , M5Cardputer.Display.height() / 2 - 50);
-  splashSprite.loadFont(font_vlw_routed_7);
+  
   splashSprite.setTextColor(TFT_BLACK);
   splashSprite.drawString(VERSION, M5Cardputer.Display.width() / 2, M5Cardputer.Display.height() / 2 - 20 );
   splashSprite.setFont(&fonts::Font0);

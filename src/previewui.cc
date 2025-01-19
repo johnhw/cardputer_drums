@@ -14,6 +14,105 @@ void initPreviewMode(DrumMachine &dm)
   setGraphicsModePreview();
 }
 
+void drawPause()
+{
+  M5Cardputer.Display.clearDisplay(TFT_DARKGREY);
+
+  // draw a large pause symbol at the top (two light grey rectangles)
+  // centered horizontally, about 80 pixels tall, 20 pixels wide each
+  int32_t symbolX = M5Cardputer.Display.width() / 2;
+  int32_t symbolY = 30;
+  M5Cardputer.Display.fillRect(symbolX - 30, symbolY, 20, 50, TFT_LIGHTGREY);
+  M5Cardputer.Display.fillRect(symbolX + 10, symbolY, 20, 50, TFT_LIGHTGREY);
+  // write text to say press enter to start
+  M5Cardputer.Display.setFont(&fonts::Font2);
+
+  M5Cardputer.Display.setTextDatum(top_center);
+  M5Cardputer.Display.setTextColor(GREEN);
+  M5Cardputer.Display.drawString("Enter to Record", M5Cardputer.Display.width() / 2, 70);
+  M5Cardputer.Display.setTextColor(RED);
+  M5Cardputer.Display.drawString("ESC to abort", M5Cardputer.Display.width() / 2, 90);
+}
+
+void drawRecord()
+{
+  M5Cardputer.Display.clearDisplay(TFT_DARKGREY);
+
+  // draw a large record symbol at the top (a red circle)
+  // centered horizontally, about 80 pixels tall, 80 pixels wide
+  int32_t symbolX = M5Cardputer.Display.width() / 2;
+  int32_t symbolY = 70;
+  M5Cardputer.Display.fillCircle(symbolX, symbolY, 25, TFT_RED);
+  M5Cardputer.Display.setFont(&fonts::Font2);
+  M5Cardputer.Display.setTextDatum(top_center);
+  M5Cardputer.Display.setTextColor(RED);
+  M5Cardputer.Display.drawString("ESC to stop", M5Cardputer.Display.width() / 2, 140);
+}
+
+void drawRecordWaveform(int16_t *buffer, int32_t samples, int32_t chunk, int32_t height, int32_t color)
+{
+  int32_t maxSamples = SAMPLE_ARENA_SIZE / sizeof(int16_t);
+  int32_t xStart = (samples * M5Cardputer.Display.width()) / maxSamples;
+  // one pixel increment
+  int32_t sampleIncrement = maxSamples / M5Cardputer.Display.width();
+  int32_t xEnd = ((samples + chunk) * M5Cardputer.Display.width()) / maxSamples;
+  int32_t yCtr = 120 - height / 2;
+  Serial.printf("Drawing from %d to %d, centered at %d, height %d\n", xStart, xEnd, yCtr, height);
+  for (int32_t x = xStart; x < xEnd; x++)
+  {
+    int32_t sampleIndex = x * sampleIncrement;
+    int16_t *sample = buffer + sampleIndex;
+    Serial.printf("Drawing sample %d=%d at %d, increment %d\n", sampleIndex, sample, x, sampleIncrement);
+    int32_t ht = ((*sample * height / 2) / 32768);
+
+    M5Cardputer.Display.drawFastVLine(x, yCtr - ht, ht * 2, color);
+  }
+}
+
+void recordAudioLoop(DrumMachine &dm)
+{
+  drawPause();
+  // wait for the user to press enter
+  while (!M5Cardputer.Keyboard.isKeyPressed(KEY_ENTER))
+  {
+    M5Cardputer.update();
+    delay(1);
+    // abort on escape/backquote
+    if (M5Cardputer.Keyboard.isKeyPressed('`'))
+    {
+      return;
+    }
+  }
+  // stop the speaker / start microphone
+  M5Cardputer.Speaker.end();
+  M5Cardputer.Mic.begin();
+
+  drawRecord();
+  int32_t recordChunk = samplerate / 8; // 1/8 second chunks
+
+  // clear the samples arena
+  clearSamples(dm);
+  int32_t samples = 0;
+  while (!M5Cardputer.Keyboard.isKeyPressed('`'))
+  {
+    int16_t *arenaPtr = (int16_t *)allocArena(&dm.sampleArena, recordChunk * sizeof(int16_t));
+    if (arenaPtr && M5Cardputer.Mic.record(arenaPtr, recordChunk, samplerate))
+    {
+      drawRecordWaveform((int16_t *)dm.sampleArena.start, samples, recordChunk, 30, TFT_WHITE);
+      samples += recordChunk;
+    }
+    else
+    {
+      // error
+      Serial.println("Error recording");
+      break;
+    }
+  }
+  M5Cardputer.Mic.end();
+  // restart the speaker
+  M5Cardputer.Speaker.begin();
+}
+
 void setGraphicsModePreview()
 {
   M5Cardputer.Display.clearDisplay(TFT_DARKGREY);
@@ -33,6 +132,11 @@ void previewFnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   {
     dm.bankAction = ACTION_SAVE;
     lowerMessage("Save kit:");
+  }
+  if (M5Cardputer.Keyboard.isKeyPressed('r'))
+  {
+    recordAudioLoop(dm);
+    initPreviewMode(dm);
   }
 }
 
@@ -120,13 +224,15 @@ void previewModeKeys(DrumMachine &dm)
       int16_t bank = getAlphanumericPressed(status);
       if (bank >= 0)
       {
-        if (dm.bankAction == ACTION_LOAD)
-        {
-          // loadCustomKit(dm, bank);
-        }
         if (dm.bankAction == ACTION_SAVE)
         {
-          // saveCustomKit(dm, bank);
+          saveSampleAdjustments(dm, bank);
+          initPreviewMode(dm);
+        }
+        if (dm.bankAction == ACTION_LOAD)
+        {
+          loadSampleAdjustments(dm, bank);
+          initPreviewMode(dm);
         }
       }
     }
@@ -422,6 +528,7 @@ void redrawPreview(DrumMachine &dm)
   char sample = dm.previewData.lastSample;
   preview[0] = sample;
   M5Cardputer.Display.clearDisplay(TFT_DARKGREY);
+  M5Cardputer.Display.setTextDatum(top_center);
 
   if (sample <= '`')
     return;

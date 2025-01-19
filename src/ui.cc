@@ -59,21 +59,6 @@ void initCursor(cursor_t &cursor)
     cursor.dirty = 0;
 }
 
-// save the current drum machine state to a file
-bool saveDrumMachine(DrumMachine &dm, String &fname)
-{
-    Serial.println("Saving drum machine state to " + fname);
-    File ser = LittleFS.open(fname, "w");
-    if (!ser)
-    {
-        Serial.println("Failed to open file for writing");
-        return false;
-    }
-    writeDrumMachine(dm, ser);
-    ser.close();
-    return true;
-}
-
 void reinitState(DrumMachine &dm)
 {
     dm.patternCursor = 0;
@@ -87,6 +72,7 @@ void reinitState(DrumMachine &dm)
 bool loadDrumMachine(DrumMachine &dm, String &fname)
 {
     bool success;
+
     File ser = LittleFS.open(fname, "r");
     if (!ser)
     {
@@ -193,6 +179,80 @@ void resetState(DrumMachine &dm)
     updatePattern(dm);
 }
 
+// serialise *just* the sample adjustments
+bool saveSampleAdjustments(DrumMachine &dm, int32_t bank)
+{
+    char filename[128];
+    sprintf(filename, "/kit-%04d.adj", bank);
+
+    File ser = LittleFS.open(filename, "w");
+    if (!ser)
+    {
+        Serial.println("Failed to open file for writing");
+        return false;
+    }
+    serialiseKit(dm, ser);
+    ser.close();
+    return true;
+}
+
+bool resetSampleAdjustments(DrumMachine &dm)
+{
+    int32_t i;
+    for(i=0; i<maxSamples; i++)
+    {
+        dm.drumSamples[i].adjustments.detune = 0;
+        dm.drumSamples[i].adjustments.volume = 0;
+        dm.drumSamples[i].adjustments.cutoff = 0;
+        dm.drumSamples[i].adjustments.trimStart = 0;
+        dm.drumSamples[i].adjustments.trimEnd = 0;
+        dm.drumSamples[i].adjustments.loopStart = 0;
+        dm.drumSamples[i].adjustments.loopEnd = 0;
+        dm.drumSamples[i].adjustments.loopEnabled = 0;
+    }
+}
+
+bool loadSampleAdjustments(DrumMachine &dm, int32_t bank)
+{
+    char filename[128];
+    sprintf(filename, "/kit-%04d.adj", bank);
+
+    File ser = LittleFS.open(filename, "r");
+    if (!ser)
+    {
+        Serial.println("Failed to open file for reading");
+        return false;
+    }
+
+    bool success = deserialiseKit(dm, ser);
+    ser.close();
+
+    if(!success)
+    {
+        Serial.println("Failed to deserialise kit");
+        resetSampleAdjustments(dm);
+        return false;
+    }
+
+    
+    return true;
+}
+
+// save the current drum machine state to a file
+bool saveDrumMachine(DrumMachine &dm, String &fname)
+{
+    Serial.println("Saving drum machine state to " + fname);
+    File ser = LittleFS.open(fname, "w");
+    if (!ser)
+    {
+        Serial.println("Failed to open file for writing");
+        return false;
+    }
+    writeDrumMachine(dm, ser);
+    ser.close();
+    return true;
+}
+
 // Set the current kit to the given index
 // resynthetizes all samples
 void setKit(DrumMachine &dm, int kit)
@@ -205,7 +265,9 @@ void setKit(DrumMachine &dm, int kit)
     if (dm.kit < nDrumKits)
     {
         synthKitSamples(dm, drumKits[dm.kit]);
+        loadSampleAdjustments(dm, dm.kit); // load the sample adjustments (if any)
         requestMix(dm);
+
         return;
     }
 
@@ -222,6 +284,7 @@ void setKit(DrumMachine &dm, int kit)
     }
     else
     {
+        loadSampleAdjustments(dm, dm.kit); // load the sample adjustments (if any)
         requestMix(dm);
     }
 }

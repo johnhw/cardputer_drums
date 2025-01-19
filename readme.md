@@ -10,7 +10,7 @@ This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stac
 ## Features
 
 * 16KHz sample rate
-* 16 steps, 8 tracks
+* 16 steps per pattern, 8 tracks
 * 36 patterns
 * Swing/shuffle
 * Channel mute/solos
@@ -67,7 +67,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `ctrl+↑` increase pitch by 1 octave
 * `ctrl+↓` decrease pitch by 1 octave
 * `ctrl+shift+<n>` set portamento time to 0-9 (0=off, 9=slowest). Default is 0
-
+* `tab` cycle through FX
 
 ### Global
 * `fn+↑` increase BPM
@@ -160,9 +160,10 @@ Parameters can be edited:
 * `release` release time in ms
 
 ### Keys
-* `fn+s` <n> save kit
-* `fn+o` <n> load kit
+* `fn+s` <n> save kit (i.e. parameters of the current kit)
+* `fn+o` <n> load kit (i.e. parameters of the current kit)
 * `fn+n` reset kit
+* `fn+r` enter live sampling/recording mode.
 * `opt` hold for fine adjust (+/- 1)
 * `alt` hold for coarse adjust (+/- 100)
 * `alt+opt` hold for very coarse adjust (+/- 1000)

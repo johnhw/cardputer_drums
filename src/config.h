@@ -2,6 +2,7 @@
 #define CONFIG_H
 #include <stdint.h>
 #include <Arduino.h>
+
 static constexpr const int32_t samplerate = 16000;         // sample rate in Hz
 static constexpr const int16_t nSteps = 16;                // number of steps in a pattern
 static constexpr const int16_t nChans = 8;                 // number of channels
@@ -16,6 +17,7 @@ static constexpr const float maxSampleLen = 0.5;           // maximum length in 
 static constexpr const int32_t SAMPLE_ARENA_SIZE = 160000; // number of samples in the kit arena (all samples are consecutive slices of this)
 static constexpr const int32_t bufferBeats = 8;            // division of a bar in one audio buffer (4 = 1/4 bar)
 static constexpr const int32_t messageTime = 1000;         // time in ms to show a status message
+static constexpr const int32_t maxSamples = 27;           // maximum number of samples in a kit
 
 const String VERSION = "1.0.4";
 const String basePathPattern = "/bonnethead/patterns"; // paths in the filesystem to save/load from
