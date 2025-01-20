@@ -272,9 +272,11 @@ void setKit(DrumMachine &dm, int kit)
     }
 
     // try loading a cached kit from the SD card
-    String kitName = basePathKits + "/" + "base-" + (kit + 1) + ".kit";
+    char kitName[128];
+    snprintf(kitName, 127, "%s/base-%c.kit", basePathKits.c_str(), alphaNumericChars[kit+1]);
+    Serial.println("Loading kit " + String(kitName));
 
-    bool success = loadKitSD(kitName, dm);
+    bool success = loadKitSD(String(kitName), dm);
     if (!success)
     {
         if (dm.kit != oldKit)

@@ -283,6 +283,13 @@ bool loadKitSD(const String &path, DrumMachine &dm)
         maxLen = maxLen / sizeof(int16_t);
         int32_t byteLen = maxLen * sizeof(int16_t);
         int16_t *buffer = (int16_t *)allocArena(&dm.sampleArena, byteLen);
+        if (buffer == nullptr)
+        {
+            Serial.println("Out of memory");
+            dm.drumSamples[i].samples = nullptr;
+            dm.drumSamples[i].len = 0;
+            continue;
+        }
         file.read((byte *)buffer, byteLen);
         dm.drumSamples[i].samples = buffer;
         dm.drumSamples[i].len = maxLen;

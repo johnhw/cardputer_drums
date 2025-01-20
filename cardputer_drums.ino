@@ -23,11 +23,11 @@
 // TODO:
 
 // beat slicer? 
-// fix waveform not showing
+// fix waveform not showing in rec
 // sort out kit loading / saving adjustments
 // fix pattern switch visual sync (off by 1/2 beat)
 // flams: double flam, triple flam, roll, reverse. 
-
+// setting portamento also sets note!
 // maybe:
 
 // live recording
