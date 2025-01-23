@@ -1,7 +1,7 @@
 // stores and retrieves DrumMachine data
 #include "serialize.h"
 
-#define SERIALIZE_ID 0xBEA104
+#define SERIALIZE_ID 0xBEA105
 
 // write a single integer to the string, followed by a comma
 void addToken(File ser, int32_t value)
@@ -35,6 +35,7 @@ bool writeSampleAdjustment(sample_adjustment_t *adj, File &ser)
     addToken(ser, adj->trimEnd);
     addToken(ser, adj->loopStart);
     addToken(ser, adj->loopEnd);
+    addToken(ser, adj->loopMode);
     addToken(ser, adj->attackTime);
     addToken(ser, adj->decayTime);
     addToken(ser, adj->sustainLevel);
@@ -57,6 +58,7 @@ bool readSampleAdjustment(sample_adjustment_t *adj, File &ser)
     adj->trimEnd = getToken(ser);
     adj->loopStart = getToken(ser);
     adj->loopEnd = getToken(ser);
+    adj->loopMode = getToken(ser);
     adj->attackTime = getToken(ser);
     adj->decayTime = getToken(ser);
     adj->sustainLevel = getToken(ser);

@@ -16,7 +16,7 @@ void setCursor(DrumMachine &dm, int16_t step, int16_t chan)
 {
   drawCursor(dm, 0);
   dm.cursor.step = step;
-  dm.cursor.chan = chan;  
+  dm.cursor.chan = chan;
   dm.cursor.dirty = 1;
   drawNoteDetails(dm); // update lower bar details
 }
@@ -36,7 +36,7 @@ void moveCursor(DrumMachine &dm, int x, int y)
     dm.cursor.step = nSteps - 1;
   if (dm.cursor.chan >= nChans)
     dm.cursor.chan = nChans - 1;
-  
+
   dm.cursor.dirty = 1;
 }
 
@@ -286,7 +286,7 @@ void noModifierKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   {
     cycleCursorFX(dm);
   }
-   if (M5Cardputer.Keyboard.isKeyPressed('\''))
+  if (M5Cardputer.Keyboard.isKeyPressed('\''))
     setCursorChar(dm, '`');
 
   // tap tempo
@@ -356,38 +356,40 @@ void saveBank(DrumMachine &dm, int16_t bank)
 void ctrlKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 {
   // transpose functions with ctrl-keyboard
-  if(!status.shift)
+
+  if (!M5Cardputer.Keyboard.isKeyPressed(KEY_LEFT_SHIFT))
   {
     chanData_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
-    if(!step) return; 
+    if (!step)
+      return;
 
     // microadjustments
-    if(M5Cardputer.Keyboard.isKeyPressed('{'))
+    if (M5Cardputer.Keyboard.isKeyPressed('{'))
     {
       step->detune -= 10;
       requestMix(dm);
       return;
     }
-    if(M5Cardputer.Keyboard.isKeyPressed('}'))
+    if (M5Cardputer.Keyboard.isKeyPressed('}'))
     {
       step->detune += 10;
       requestMix(dm);
       return;
     }
     // octaves
-    if(M5Cardputer.Keyboard.isKeyPressed(':'))
+    if (M5Cardputer.Keyboard.isKeyPressed(':'))
     {
       step->detune += 1200;
       requestMix(dm);
       return;
     }
-    if(M5Cardputer.Keyboard.isKeyPressed('>'))
+    if (M5Cardputer.Keyboard.isKeyPressed('>'))
     {
       step->detune -= 1200;
       requestMix(dm);
       return;
     }
-    if(M5Cardputer.Keyboard.isKeyPressed(' '))
+    if (M5Cardputer.Keyboard.isKeyPressed(' '))
     {
       step->detune = 0; // same as q
       requestMix(dm);
@@ -395,22 +397,22 @@ void ctrlKey(DrumMachine &dm, Keyboard_Class::KeysState status)
     }
 
     // set (don't adjust) the tuning
-    int32_t detune = getKeyboardPianoCents() ; // q = middle C/unchanged
-    if(detune==-1) return;    
+    int32_t detune = getKeyboardPianoCents(); // q = middle C/unchanged
+    if (detune == -1)
+      return;
     step->detune = detune - 1200;
     requestMix(dm);
-    
   }
-  if(status.shift)
+  else
   {
     int32_t ix = getShiftDigitPressed(status);
-    if(ix!=-1)
-    {
-      chanData_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
-      if(!step) return; 
-      step->portaTime = ix;
-      requestMix(dm);
-    }
+    if (ix == -1)
+      return;
+    chanData_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
+    if (!step)
+      return;
+    step->portaTime = ix;
+    requestMix(dm);
   }
 }
 
@@ -716,8 +718,6 @@ void fnKey(DrumMachine &dm, Keyboard_Class::KeysState status)
   }
 }
 
-
-
 void renderCursor(DrumMachine &dm, int state)
 {
   char s[2] = "X";
@@ -736,7 +736,8 @@ void renderCursor(DrumMachine &dm, int state)
   getCursorChar(dm, ch, vel);
   s[0] = ch;
   int16_t greenLevel = vel * 2 - ((dm.cursor.step % 2) ? 6 : 0);
-  if(greenLevel<0) greenLevel = 0;
+  if (greenLevel < 0)
+    greenLevel = 0;
   int16_t charColor = RGB565(0, greenLevel, 0);
   int boxOffX = -4;
   int boxOffY = -2;
@@ -754,7 +755,7 @@ void renderCursor(DrumMachine &dm, int state)
   // Render cursor based on state
   if (state == 0) // no flash
   {
-    M5Cardputer.Display.fillRect(boxX - kickWidth, boxY, dm.cursor.width + kickWidth, dm.cursor.height, charColor);    
+    M5Cardputer.Display.fillRect(boxX - kickWidth, boxY, dm.cursor.width + kickWidth, dm.cursor.height, charColor);
     M5Cardputer.Display.drawString(s, drawX, drawY - dm.cursor.height / 2);
   }
   else if (state == 1) // flash on
@@ -784,8 +785,6 @@ void drawCursor(DrumMachine &dm, int state)
   }
 
   renderCursor(dm, state);
-  
- 
 }
 
 const int16_t statusColor = RGB565(5, 5, 5);
@@ -836,6 +835,11 @@ void drawTopLine(DrumMachine &dm)
     }
   }
 
+  if (dm.liveMode)
+  {
+    M5Cardputer.Display.fillCircle(M5Cardputer.Display.width() - 10, 10, 5, RED);
+  }
+
   M5Cardputer.Display.setTextColor(WHITE);
   M5Cardputer.Display.setFont(&fonts::Font2);
 }
@@ -861,7 +865,7 @@ void renderBeatLine(DrumMachine &dm)
   {
     // draw the dancing man
     String man;
-    M5Cardputer.Display.fillRect(100, 3, 140, 10, TFT_BLACK); // clear the area
+    M5Cardputer.Display.fillRect(150, 3, 50, 10, TFT_BLACK); // clear the area
     M5Cardputer.Display.setFont(&fonts::Font0);
     M5Cardputer.Display.setTextColor(GREEN);
 
@@ -885,6 +889,11 @@ void renderBeatLine(DrumMachine &dm)
     getCursorPixelPos(dm, step, 0, x, y);
     M5Cardputer.Display.fillRect(x, y - 1, dm.cursor.width, 2, beatColor);
     dm.beatTime = step;
+    // in live mode, draw a red circle at the right hand side
+    if (dm.liveMode)
+    {
+      M5Cardputer.Display.fillCircle(M5Cardputer.Display.width() - 10, 10, 5, RED);
+    }
   }
 }
 
@@ -900,21 +909,21 @@ void drawKitLoading(DrumMachine &dm, int kit)
 // draw the details of the current step in the lower bar
 void drawNoteDetails(DrumMachine &dm)
 {
-   int statusHeight = 16;
-   int noteBoxX = 165;
-  M5Cardputer.Display.setFont(&fonts::Font0);  
+  int statusHeight = 16;
+  int noteBoxX = 160;
+  M5Cardputer.Display.setFont(&fonts::Font0);
   M5Cardputer.Display.setTextColor(GREEN);
-   // draw current step display
-   M5Cardputer.Display.fillRect(noteBoxX, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_BLACK);
+  // draw current step display
+  M5Cardputer.Display.fillRect(noteBoxX, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_BLACK);
   chanData_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
   char noteBuf[8];
   char statusBuf[64];
-  if(step && step->type>0) 
+  if (step && step->type > 0)
   {
     centsToNoteName(step->detune, noteBuf);
     int32_t fx = step->fx;
-    if(fx<0 || fx>=FX_N) // limit FX to valid range
-      fx = 0;    
+    if (fx < 0 || fx >= FX_N) // limit FX to valid range
+      fx = 0;
     snprintf(statusBuf, 64, "%s %d %02d %01d %2s", noteBuf, step->velocity, step->kickDelay, step->portaTime, fxNames[step->fx]);
     M5Cardputer.Display.drawString(statusBuf, noteBoxX, M5Cardputer.Display.height() - statusHeight);
   }
@@ -930,32 +939,22 @@ void drawStatus(DrumMachine &dm)
   // Set text color to green for the status line
   M5Cardputer.Display.setTextColor(GREEN);
   // Clear the status bar area
-  M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_BLACK);
+  M5Cardputer.Display.fillRect(0, M5Cardputer.Display.height() - statusHeight - 4, 160, statusHeight + 4, TFT_BLACK);
 
   // Create the status line with BPM, Swing, Pattern, and Kit information
   char kitName = alphaNumericChars[dm.kit + 1];
   snprintf(statusLine, 255, "BPM %03d VOL %02d SW %02d KT %c", dm.bpm, dm.volume, dm.swing, kitName);
-  M5Cardputer.Display.drawString(statusLine, 10, M5Cardputer.Display.height() - statusHeight);
+  M5Cardputer.Display.drawString(statusLine, 2, M5Cardputer.Display.height() - statusHeight);
 
   // Recalculate channels to determine if any are soloed
   int solos = recalcChannels(dm);
-
-  int32_t drawX = 172;
-
-  
- 
-
-  // in live mode, draw a red circle at the right hand side
-  if (dm.liveMode)
-  {
-    M5Cardputer.Display.fillCircle(M5Cardputer.Display.width() - 10, M5Cardputer.Display.height() - statusHeight + 2, 5, RED);
-  }
 
   drawTopLine(dm);
 
   // Reset text color to white and font to Font2
   M5Cardputer.Display.setTextColor(WHITE);
   M5Cardputer.Display.setFont(&fonts::Font2);
+  drawNoteDetails(dm); // make sure the details are updated
 }
 
 void setGraphicsModePattern()

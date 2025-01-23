@@ -208,7 +208,7 @@ bool resetSampleAdjustments(DrumMachine &dm)
         dm.drumSamples[i].adjustments.trimEnd = 0;
         dm.drumSamples[i].adjustments.loopStart = 0;
         dm.drumSamples[i].adjustments.loopEnd = 0;
-        dm.drumSamples[i].adjustments.loopEnabled = 0;
+        dm.drumSamples[i].adjustments.loopMode = LOOP_NONE;
     }
 }
 

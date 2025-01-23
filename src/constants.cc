@@ -1,7 +1,7 @@
 #include "config.h"
 
 const char* noteNames [] = {"C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-"};
-const char *fxNames [] = {"--", "FL", "RL", "RV"};
+const char *fxNames [] = {"--", "FL", "TR", "RL", "RV"};
 const float probabilityTable [] = {
     0.9642857142857143,
     0.8999999999999999,
@@ -25,3 +25,5 @@ const float probabilityTable [] = {
     "({- -})",
 };
 
+
+const char *loopNames [] = {"", "FWD", "STRETCH", "PINGPONG"};

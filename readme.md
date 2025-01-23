@@ -172,5 +172,5 @@ Parameters can be edited:
 * ` ` reset parameter to 0
 * `←` previous parameter
 * `→` next parameter 
-
+* `tab` cycle loop mode (off, forward, stretch, pingpong)
 

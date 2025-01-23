@@ -429,7 +429,7 @@ document.querySelectorAll('.sampleBox').forEach((box) => {
 document.getElementById('downloadKit').addEventListener('click', () => {
     const kitName = document.getElementById('kitName').value || 'sampleKit';
     const zip = new JSZip();
-    const folder = zip.folder(`${kitName}.KIT`);
+    const folder = zip.folder(`base-${kitName}.kit`);
 
     Object.entries(sampleMap).forEach(([key, blob]) => {
         // log the size of the blob

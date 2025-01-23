@@ -14,7 +14,7 @@ void adjustKitParam(DrumMachine &dm, int scaleMode, int adj);
 void resetKitParam(DrumMachine &dm);
 void initPreviewMode(DrumMachine &dm);
 void recordAudioLoop(DrumMachine &dm);
-
+void drawPreviewLoopMode(DrumMachine &dm);
 
 enum PARAMS
 {

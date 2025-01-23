@@ -4,6 +4,17 @@
 #include "config.h"
 #include "adsr.h"
 
+enum LOOP_MODE
+{
+    LOOP_NONE,
+    LOOP_FORWARD,
+    LOOP_STRETCH,
+    LOOP_PINGPONG,
+    LOOP_MODE_N,
+};
+
+extern const char *loopNames [];
+
 // one channel
 typedef struct channel_t
 {
@@ -29,8 +40,10 @@ typedef struct sample_adjustment_t
   int32_t decayTime = 0;    // decay time in ms
   int32_t sustainLevel = 0; // sustain level in 1/100th of a dB
   int32_t releaseTime = 0;  // release time in ms
-  bool loopEnabled = false; // loop enabled
+  int32_t loopMode = LOOP_NONE; // loop enabled
 } sample_adjustment_t;
+
+
 
 // a sample, with PCM data, length and a frequency
 typedef struct sample_t
@@ -44,10 +57,12 @@ enum FX
 {
   FX_NONE,
   FX_FLAM,
+  FX_TRIPLET,
   FX_ROLL,
   FX_REVERSE,
   FX_N
 };
+
 
 // one step of a channel
 typedef struct chanData_t
@@ -83,20 +98,25 @@ typedef struct arena_t
 
 typedef struct fxData
 {
-  bool reverse;
+  int32_t retriggerSamples; // number of samples left until retrigger
+  int32_t retriggerCounter; // count of samples since last retrigger
+  int32_t nRetrigger; // counter of retriggers remaining
+  int32_t retriggerGain; // current gain of retriggers
+  int32_t retriggerGainChange; // factor of gain change per retrigger
 } fxData;
 
 enum LOOP_STATE
 {
-  LOOP_NONE,
-  LOOP_LOOPING,
-  LOOP_RELEASE,
+  LOOP_STATE_NONE,
+  LOOP_STATE_LOOPING,
+  LOOP_STATE_RELEASE,
 };
 
 // data for mixing one channel into the final mix
 typedef struct mixData_t
 {
   sample_t *currentSample;       // pointer to current sample
+  sample_t *lastSample;          // pointer to current or last sample played (for retriggering)
   int32_t sampleIndex;           // current sample index
   int32_t fractionalSampleIndex; // in fractional samples (1/32768)
   int16_t stepIndex;             // current step index
@@ -116,6 +136,7 @@ typedef struct mixData_t
   fxData fx;                     // current FX data
   adsr_t adsr;                   // current ADSR state
   int8_t loopState;              // are we in a loop?
+  bool reverse;                  // are we playing in reverse?  
 } mixData_t;
 
 typedef struct previewData_t

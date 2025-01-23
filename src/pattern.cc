@@ -3,6 +3,17 @@
 #include "ui.h"
 #include "patternui.h"
 
+void resetStep(chanData_t *step)
+{
+    step->type = 0;
+    step->velocity = 6;
+    step->kickDelay = 0;
+    step->fx = 0;
+    step->detune = 0;
+    step->probability = 0;
+    step->portaTime = 0;    
+}
+
 void clearPattern(DrumMachine &dm)
 {
     int oldStep = dm.cursor.step;
@@ -13,9 +24,8 @@ void clearPattern(DrumMachine &dm)
         {
             dm.cursor.step = j;
             dm.cursor.chan = i;
-            setCursorChar(dm, 0);
-            setCursorVel(dm, '6');
-            setCursorKick(dm, 0);
+            chanData_t *ch = getStep(dm, j, i);
+            resetStep(ch);                        
         }
     }
     dm.cursor.step = oldStep;

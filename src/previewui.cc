@@ -204,6 +204,20 @@ void prevKitParam(DrumMachine &dm)
   }
 }
 
+// cycle through the loop modes
+void cycleLoopMode(DrumMachine &dm, char sampleIndex)
+{
+  sample_t *sample = getSample(dm, sampleIndex);
+  if(!sample) return;
+  sample->adjustments.loopMode++;
+  if (sample->adjustments.loopMode >= LOOP_MODE_N)
+  {
+    sample->adjustments.loopMode = 0;
+  }
+  drawPreviewLoopMode(dm);
+  previewSample(dm, dm.previewData.lastSample);
+}
+
 // in preview mode, just play samples immediately
 void previewModeKeys(DrumMachine &dm)
 {
@@ -317,6 +331,13 @@ void previewModeKeys(DrumMachine &dm)
         dm.previewData.previewDirty = true;
         redrawPreview(dm);
       }
+
+      // cycle loop modes
+      if(M5Cardputer.Keyboard.isKeyPressed(KEY_TAB))
+      {
+        cycleLoopMode(dm, dm.previewData.lastSample);
+      }
+      
     }
   }
 }
@@ -402,8 +423,7 @@ void setKitParamValue(DrumMachine &dm, int32_t param, char sample, int32_t value
     if (param == PARAM_LOOP_END && value < samplePtr->adjustments.loopStart)
       value = samplePtr->adjustments.loopStart;
     // set looping to enabled when loopStart != loopEnd
-    if (samplePtr->adjustments.loopStart != 0 && samplePtr->adjustments.loopEnd != 0)
-      samplePtr->adjustments.loopEnabled = true;
+    
   }
 
   switch (param)
@@ -509,13 +529,28 @@ void renderWaveform(sample_t *sample, int32_t baseY)
   M5Cardputer.Display.drawLine(start, baseY - height, start, baseY + height, TFT_RED);
   M5Cardputer.Display.drawLine(end, baseY - height, end, baseY + height, TFT_RED);
 
-  bool isLoop = sample->adjustments.loopEnd != 0 && sample->adjustments.loopStart != 0;
+  bool isLoop = sample->adjustments.loopEnd != 0 || sample->adjustments.loopStart != 0;
   if (isLoop)
   {
     int32_t loopStart = baseX + sample->adjustments.loopStart * width / len;
     int32_t loopEnd = baseX + (len - sample->adjustments.loopEnd) * width / len;
     M5Cardputer.Display.drawLine(loopStart, baseY - height, loopStart, baseY + height, TFT_CYAN);
     M5Cardputer.Display.drawLine(loopEnd, baseY - height, loopEnd, baseY + height, TFT_CYAN);
+  }
+}
+
+void drawPreviewLoopMode(DrumMachine &dm)
+{
+  sample_t *samplePtr = getSample(dm, dm.previewData.lastSample);
+  
+  M5Cardputer.Display.setFont(&fonts::Font2);
+  M5Cardputer.Display.setTextColor(TFT_WHITE);
+  M5Cardputer.Display.setTextDatum(top_left);
+  // draw a box at the top lift, fill black, and write the loop mode in it
+  M5Cardputer.Display.fillRect(0, 0, 80, 20, TFT_DARKGREY);  
+  if(samplePtr)
+  {
+    M5Cardputer.Display.drawString(loopNames[samplePtr->adjustments.loopMode],3, 3);
   }
 }
 
@@ -532,6 +567,7 @@ void redrawPreview(DrumMachine &dm)
 
   if (sample <= '`')
     return;
+
   M5Cardputer.Display.setTextColor(WHITE);
   M5Cardputer.Display.setFont(&fonts::FreeMonoBold24pt7b);
   M5Cardputer.Display.setTextColor(BLACK);
@@ -567,6 +603,8 @@ void redrawPreview(DrumMachine &dm)
   {
     renderWaveform(samplePtr, 110);
   }
+  drawPreviewLoopMode(dm);
+  
 
   dm.previewData.previewDirty = false;
 }

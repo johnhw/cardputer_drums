@@ -25,5 +25,5 @@ void clearSamples(DrumMachine &dm);
 void allocSamples(DrumMachine &dm);
 void recalcBPM(DrumMachine &dm);
 void resetAudioPlayback(DrumMachine &dm);
-
+void computeStretch(DrumMachine &dm, mixData_t *mx, chanData_t *ch);
 #endif

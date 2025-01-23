@@ -114,7 +114,12 @@ int32_t freqIncrement(int32_t totalDetune)
 
 void resetFX(fxData *fx)
 {
-    fx->reverse = false;
+    // clear the retrigger state
+    fx->retriggerSamples = 0;
+    fx->nRetrigger = 0;
+    fx->retriggerGain = 0;
+    fx->retriggerGainChange = 0;
+    fx->retriggerCounter = 0;
 }
 
 // reset the mix data for a single channel
@@ -136,6 +141,7 @@ void resetMixChannel(mixData_t *mx)
     mx->channelDetune = 0;
     mx->channelCutoff = 0;
     mx->smoothFreqIncrement = 32768;
+    mx->reverse = false;
     resetFX(&mx->fx);
 }
 
@@ -157,22 +163,46 @@ void resetMix(DrumMachine &dm)
         mx->channelGain = powf(1.4142, (ch->volume - 8));
         mx->channelDetune = ch->detune;
         mx->channelCutoff = ch->filterCutoff;
-        
     }
 }
 
 void setDetuneVelocity(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
 {
-    if(!mx->currentSample)
+    if (!mx->currentSample)
         return;
-     mx->currentVelocity = ch->velocity;
-     mx->portaCoeff = 1-exp(-ch->portaTime*2);
+    mx->currentVelocity = ch->velocity;
+    mx->portaCoeff = 1 - exp(-ch->portaTime * 2);
     // target detune state includes this step
-    mx->totalDetune = mx->currentSample->adjustments.detune + ch->detune + mx->channelDetune;
-    mx->freqIncrement = freqIncrement(mx->totalDetune); // compute the target step increment
-    if(ch->portaTime==0) // no portamento, just set the increment
-        mx->smoothFreqIncrement = mx->freqIncrement;
+    mx->totalDetune = mx->currentSample->adjustments.detune + ch->detune + mx->channelDetune;    
     mx->totalGain = mx->channelGain * mx->currentVelocity * cBGain(mx->currentSample->adjustments.volume);
+
+    if(mx->currentSample->adjustments.loopMode == LOOP_STRETCH) // stretch samples 
+        computeStretch(dm, mx, ch);
+    else 
+        mx->freqIncrement = freqIncrement(mx->totalDetune); // compute the target step increment
+    if (ch->portaTime == 0)                             // no portamento, just set the increment
+        mx->smoothFreqIncrement = mx->freqIncrement;        
+}
+
+// if the sample has the loop type LOOP_STRETCH,
+// compute the detune needed to make the sample
+// fit the length of the pattern
+// the computation is the length of the *loop* start/end stretched to the pattern
+// scaled by the pitch modifier (so +1 octave = half the pattern length)
+void computeStretch(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
+{
+    int32_t targetSamples = dm.patternSamples;
+    sample_t *sample = mx->currentSample;
+    sample_adjustment_t *adj = &sample->adjustments;
+    int32_t loopStart = adj->loopStart;
+    int32_t loopEnd = sample->len - adj->loopEnd;
+    int32_t loopSamples = loopEnd - loopStart;
+    if(loopSamples <= 0) // can't stretch a sample with no loop
+        return; 
+    float stretchFactor = (float)loopSamples / (float)targetSamples;
+    float factorAdjustment =  powf(2.0, mx->totalDetune / 1200.0);
+    int32_t freqInc = 32768.0 * (stretchFactor * factorAdjustment);
+    mx->freqIncrement = freqInc;    
 }
 
 void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
@@ -180,7 +210,7 @@ void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
     mx->stepIndex = mx->nextIndex;
     sample_t *newSample;
     int32_t index = ch->type;
-    if(index == '`')
+    if (index == '`')
     {
         // note "continue" - change velocity and portamento target
         setDetuneVelocity(dm, mx, ch);
@@ -189,19 +219,51 @@ void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
     if (index == 'z')
     {
         // note off
-        mx->loopState = LOOP_RELEASE;
+        mx->loopState = LOOP_STATE_RELEASE;
         releaseADSR(&mx->adsr);
         return;
     }
     newSample = getSample(dm, index);
     if (newSample != nullptr) // cutoff if there's a new sample to start (do nothing otherwise)
     {
-        mx->currentSample = newSample;       
+        mx->currentSample = newSample;
+        mx->lastSample = newSample;
         setDetuneVelocity(dm, mx, ch);
-        mx->loopState = LOOP_NONE;                        
+        mx->loopState = LOOP_STATE_NONE;
+        mx->reverse = false;
+
+        // FX
+        fxData *fx = &mx->fx;
+        resetFX(fx);        
+        
+        switch(ch->fx)
+        {
+            case FX_REVERSE:
+                mx->reverse = !mx->reverse;
+                break;
+            case FX_FLAM:
+                fx->nRetrigger = 1;
+                fx->retriggerSamples = dm.oneKickTime * 6;
+                fx->retriggerGain = 1.0;
+                fx->retriggerGainChange = 0.5;
+                break;
+            case FX_TRIPLET:
+                fx->nRetrigger = 3;
+                fx->retriggerSamples = dm.oneKickTime * 4;
+                fx->retriggerGain = 1.0;
+                fx->retriggerGainChange = 0.3;
+                break;
+            case FX_ROLL:
+                fx->nRetrigger = 10000000;
+                fx->retriggerSamples = dm.oneKickTime * 8;
+                fx->retriggerGain = 1.0;
+                fx->retriggerGainChange = 1.0;
+                break;                
+        }
+        
         mx->fractionalSampleIndex = 32768 * newSample->adjustments.trimStart;
         // gain is product of channel gain, step velocity and sample gain
-        
+
         // sample cutoff is min of channel and sample cutoff
         float channelCutoff = (float)(maxFilterCutoff - mx->channelCutoff) / (float)maxFilterCutoff;
         float sampleCutoff = (1 - newSample->adjustments.cutoff / 1000.0);
@@ -223,43 +285,85 @@ void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
     }
 }
 
+// make sure we retrigger if we need to
+void updateFX(mixData_t *mx)
+{
+    fxData *fx = &mx->fx;
+    if (fx->nRetrigger > 0)
+    {        
+        fx->retriggerCounter++;
+        // retrigger tripped
+        if (fx->retriggerCounter >= fx->retriggerSamples)
+        {
+            fx->retriggerCounter = 0;
+            fx->nRetrigger--;            
+            mx->totalGain *= fx->retriggerGain;
+            if(mx->lastSample!=nullptr)
+            {
+                mx->currentSample = mx->lastSample;
+                mx->fractionalSampleIndex = 32768 * mx->currentSample->adjustments.trimStart;
+            }
+        }
+    }
+}
+
 float mixCurrentSample(mixData_t *mx)
 {
     float in = 0.0f;
+    updateFX(mx);
     // copy in the sample, if there's more to copy
     if (mx->currentSample && mx->currentSample->len != 0)
     {
-        mx->fractionalSampleIndex += (int32_t)mx->smoothFreqIncrement;
+        int32_t trimmedEnd = mx->currentSample->len - mx->currentSample->adjustments.trimEnd;
+        int32_t loopEnd = mx->currentSample->len - mx->currentSample->adjustments.loopEnd;
         mx->sampleIndex = mx->fractionalSampleIndex / 32768;
-        if (mx->sampleIndex >= 0) // skip if we have a negative index (delayed start)
-            in = mx->currentSample->samples[mx->sampleIndex] * mx->totalGain;
+        if (mx->sampleIndex >= 0) // skip if we have a negative index due to delay in "trim"
+        {
+            if(mx->reverse)
+                in = mx->currentSample->samples[trimmedEnd - mx->sampleIndex] * mx->totalGain;                
+            else
+                in = mx->currentSample->samples[mx->sampleIndex] * mx->totalGain;
+        }
+            
+        // envelope
         if (mx->adsr.enabled)
         {
             in *= mx->adsr.env;
             mx->adsr.env = nextADSR(&mx->adsr);
         }
+        // filter
         mx->currentFilter = mx->filterAlpha * mx->currentFilter + (1.0f - mx->filterAlpha) * in;
         in = mx->currentFilter;
-
+        // portamento
         mx->smoothFreqIncrement = mx->smoothFreqIncrement * mx->portaCoeff + mx->freqIncrement * (1 - mx->portaCoeff);
+        mx->fractionalSampleIndex += (int32_t)mx->smoothFreqIncrement;
 
+        // loop logic
         sample_adjustment_t *adj = &mx->currentSample->adjustments;
-        // set the loop flag
-        if (mx->sampleIndex >= adj->loopStart && adj->loopEnabled && mx->loopState == LOOP_NONE)
+        // state NONE->LOOPING
+        if (mx->sampleIndex >= adj->loopStart && adj->loopMode != LOOP_NONE && mx->loopState == LOOP_STATE_NONE)
         {
-            mx->loopState = LOOP_LOOPING;
+            mx->loopState = LOOP_STATE_LOOPING;
         }
-        // loop, if required
-        if (mx->loopState == LOOP_LOOPING && adj->loopEnabled && mx->sampleIndex >= mx->currentSample->len - adj->loopEnd)
+        // state LOOPING -- go back
+        if (mx->loopState == LOOP_STATE_LOOPING && adj->loopMode != LOOP_NONE && mx->sampleIndex >= loopEnd)
         {
-            mx->sampleIndex = adj->loopStart;
-            mx->fractionalSampleIndex = mx->sampleIndex * 32768;
+            if (adj->loopMode == LOOP_PINGPONG)
+            {
+                // just reverse direction in pingpong mode
+                mx->reverse = !mx->reverse; // TODO: this is broken
+            }
+            else
+            {
+                mx->sampleIndex = adj->loopStart;
+                mx->fractionalSampleIndex = adj->loopStart * 32768;
+            }
         }
-        // terminate if we run off the end
-        if (mx->sampleIndex >= mx->currentSample->len)
+        // terminate sample
+        if (mx->sampleIndex >= trimmedEnd)
         {
             mx->currentSample = nullptr;
-        }
+        }        
     }
     return in;
 }
@@ -315,7 +419,7 @@ void triggerPreviewSample(DrumMachine &dm, int index)
         .detune = dm.previewData.detune,
         .probability = 0,
         .portaTime = 0,
-        };
+    };
     resetMixChannel(&dm.previewData.previewMix);
     mixTriggerSample(dm, &dm.previewData.previewMix, &dm.previewData.previewChan);
 }
