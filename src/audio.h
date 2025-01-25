@@ -5,13 +5,14 @@
 #include "synth.h"
 #include "utils.h"
 #include "adsr.h"
+#include "fx.h" 
 
 void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer, int32_t len);
 void resetMix(DrumMachine &dm);
 void triggerPreviewSample(DrumMachine &dm, int index);
 void mixSingleSampleToBuffer(DrumMachine &dm, int16_t *buffer, int32_t len);
 void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer, int32_t len);
-void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch);
+void mixTriggerSample(DrumMachine &dm, mixData_t *mx, step_t *ch);
 
 void feedPatternBuffers(DrumMachine &dm);
 void feedPreviewBuffers(DrumMachine &dm);
@@ -25,5 +26,5 @@ void clearSamples(DrumMachine &dm);
 void allocSamples(DrumMachine &dm);
 void recalcBPM(DrumMachine &dm);
 void resetAudioPlayback(DrumMachine &dm);
-void computeStretch(DrumMachine &dm, mixData_t *mx, chanData_t *ch);
+void computeStretch(DrumMachine &dm, mixData_t *mx, step_t *ch);
 #endif

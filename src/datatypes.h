@@ -3,14 +3,23 @@
 #include <stdint.h>
 #include "config.h"
 #include "adsr.h"
+#include "fx.h"
 
+// types of loop
 enum LOOP_MODE
 {
     LOOP_NONE,
     LOOP_FORWARD,
     LOOP_STRETCH,
-    LOOP_PINGPONG,
     LOOP_MODE_N,
+};
+
+// current state of the loop
+enum LOOP_STATE
+{
+  LOOP_STATE_NONE,
+  LOOP_STATE_LOOPING,
+  LOOP_STATE_RELEASE,
 };
 
 extern const char *loopNames [];
@@ -41,6 +50,7 @@ typedef struct sample_adjustment_t
   int32_t sustainLevel = 0; // sustain level in 1/100th of a dB
   int32_t releaseTime = 0;  // release time in ms
   int32_t loopMode = LOOP_NONE; // loop enabled
+  int32_t samplePtr = 0; // if non-zero, this samples is virtual, and is the index of the sample it refers to
 } sample_adjustment_t;
 
 
@@ -65,7 +75,7 @@ enum FX
 
 
 // one step of a channel
-typedef struct chanData_t
+typedef struct step_t
 {
   int16_t type;
   int16_t velocity;
@@ -74,7 +84,7 @@ typedef struct chanData_t
   int32_t detune;      // detune in cents
   int16_t probability; // probability of playing this step (in logits)
   int16_t portaTime;   // portamento time 0-9
-} chanData_t;
+} step_t;
 
 // the cursor location/flash state
 typedef struct cursor_t
@@ -96,21 +106,15 @@ typedef struct arena_t
   void *top;
 } arena_t;
 
-typedef struct fxData
+typedef struct fx_t
 {
   int32_t retriggerSamples; // number of samples left until retrigger
   int32_t retriggerCounter; // count of samples since last retrigger
   int32_t nRetrigger; // counter of retriggers remaining
   int32_t retriggerGain; // current gain of retriggers
   int32_t retriggerGainChange; // factor of gain change per retrigger
-} fxData;
+} fx_t;
 
-enum LOOP_STATE
-{
-  LOOP_STATE_NONE,
-  LOOP_STATE_LOOPING,
-  LOOP_STATE_RELEASE,
-};
 
 // data for mixing one channel into the final mix
 typedef struct mixData_t
@@ -133,7 +137,7 @@ typedef struct mixData_t
   int32_t channelCutoff;         // cutoff for this channel
   float smoothFreqIncrement;     // smooth detune for portamento
   float portaCoeff;              // portamento coefficient
-  fxData fx;                     // current FX data
+  fx_t fx;                     // current FX data
   adsr_t adsr;                   // current ADSR state
   int8_t loopState;              // are we in a loop?
   bool reverse;                  // are we playing in reverse?  
@@ -145,9 +149,14 @@ typedef struct previewData_t
   int16_t currentParam = 0; // current parameter being edited in preview mode
   bool previewDirty = true; // flag to indicate that the preview needs to be updated
   int32_t detune = 0;       // current detune value for the preview
-  chanData_t previewChan;   // the current channel data for the preview (always dummy)
+  step_t previewChan;   // the current channel data for the preview (always dummy)
   mixData_t previewMix;     // the current mix data for the preview
 } previewData_t;
+
+typedef struct mixFX_t
+{
+  compressor_t compressor; // compressor configuration
+} mixFX_t;
 
 struct DrumMachine
 {
@@ -199,10 +208,10 @@ struct DrumMachine
 
   cursor_t cursor;
   channel_t channels[nChans];
-
-  chanData_t *currentPattern;
-  chanData_t allPatterns[nSteps * nChans * maxPatterns];
-  chanData_t clipboard[nSteps * nChans];
+  mixFX_t mixFX; // global mix FX data
+  step_t *currentPattern;
+  step_t allPatterns[nSteps * nChans * maxPatterns];
+  step_t clipboard[nSteps * nChans];
   previewData_t previewData;
   mixData_t mixData[nChans];
 };

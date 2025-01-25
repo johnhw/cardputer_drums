@@ -1,7 +1,7 @@
 // stores and retrieves DrumMachine data
 #include "serialize.h"
 
-#define SERIALIZE_ID 0xBEA105
+#define SERIALIZE_ID 0xBEA106
 
 // write a single integer to the string, followed by a comma
 void addToken(File ser, int32_t value)
@@ -10,19 +10,29 @@ void addToken(File ser, int32_t value)
     ser.print(",");
 }
 
-// read a single integer from the string, followed by a comma
+// read a single signed integer from the string, followed by a comma
 int32_t getToken(File ser)
 {
     int32_t value = 0;
+    bool isNegative = false;
+
+    if (ser.peek() == '-')
+    {
+        isNegative = true;
+        ser.read(); // consume the negative sign
+    }
+
     while (ser.peek() != ',' && ser.peek() != -1)
     {
         value = value * 10 + (ser.read() - '0');
     }
+
     if (ser.peek() == ',')
     {
-        ser.read();
+        ser.read(); // consume the comma
     }
-    return value;
+
+    return isNegative ? -value : value;
 }
 
 bool writeSampleAdjustment(sample_adjustment_t *adj, File &ser)
@@ -40,6 +50,7 @@ bool writeSampleAdjustment(sample_adjustment_t *adj, File &ser)
     addToken(ser, adj->decayTime);
     addToken(ser, adj->sustainLevel);
     addToken(ser, adj->releaseTime);
+    addToken(ser, adj->samplePtr);
     return true;
 }
 
@@ -63,6 +74,7 @@ bool readSampleAdjustment(sample_adjustment_t *adj, File &ser)
     adj->decayTime = getToken(ser);
     adj->sustainLevel = getToken(ser);
     adj->releaseTime = getToken(ser);
+    adj->samplePtr = getToken(ser);
     return true;
 }
 
@@ -85,7 +97,7 @@ bool writeSampleAdjustments(DrumMachine &dm, File &ser)
 }
 
 /* read a single step of a pattern from the file */
-bool readStep(chanData_t *step, File &ser)
+bool readStep(step_t *step, File &ser)
 {
     step->type = getToken(ser);
     step->velocity = getToken(ser);
@@ -97,7 +109,7 @@ bool readStep(chanData_t *step, File &ser)
 }
 
 /* write a single step of a pattern to the file */
-bool writeStep(chanData_t *step, File &ser)
+bool writeStep(step_t *step, File &ser)
 {
     addToken(ser, step->type);
     addToken(ser, step->velocity);
@@ -187,6 +199,7 @@ bool writeChannels(DrumMachine &dm, File &ser)
 
 bool writeConfiguration(DrumMachine &dm, File &ser)
 {
+    addToken(ser, 0xd00a);
     addToken(ser, dm.bpm);
     addToken(ser, dm.swing);
     addToken(ser, dm.pattern);
@@ -198,6 +211,7 @@ bool writeConfiguration(DrumMachine &dm, File &ser)
 
 bool writePatternSequence(DrumMachine &dm, File &ser)
 {
+    addToken(ser, 0xbeef);
     addToken(ser, strlen(dm.patternSequence));
     for (int i = 0; i < strlen(dm.patternSequence); i++)
     {
@@ -222,6 +236,12 @@ bool writeDrumMachine(DrumMachine &dm, File &ser)
 /* Read the global configuration from the file */
 bool readConfiguration(DrumMachine &dm, File &ser)
 {
+    int32_t id = getToken(ser);
+    if (id != 0xd00a)
+    {
+        Serial.println("Invalid configuration ID");
+        return false;
+    }
     dm.bpm = getToken(ser);
     dm.swing = getToken(ser);
     dm.pattern = getToken(ser);
@@ -233,6 +253,12 @@ bool readConfiguration(DrumMachine &dm, File &ser)
 
 bool readPatternSequence(DrumMachine &dm, File &ser)
 {
+    int32_t id = getToken(ser);
+    if (id != 0xbeef)
+    {
+        Serial.println("Invalid pattern sequence ID");
+        return false;
+    }
     int len = getToken(ser);
     char patternSequence[128];
     for (int i = 0; i < len; i++)

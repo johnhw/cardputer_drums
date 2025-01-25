@@ -18,11 +18,13 @@ This is a simple and lofi drum machine for the [M5Cardputer](https://shop.m5stac
 * Pattern sequencer
 * Per-channel filters
 * Multiple drum kits
+* Tuning, looping, envelopes and filters for samples 
+* Retrigger and reverse step effects
 * Live keydrumming mode
 * Render to SD card
 * Sampled drum kits from SD card
 * Pitching and tuning, including portamento
-* Loops
+* Auto-pitchstretched loops
 * Tap tempo
 
 ## UI
@@ -31,8 +33,12 @@ The dot grid indicates the 16x8 steps for the current pattern.
 ### Status line
 
 #### Top
-* [0] Pattern number
+* `0` Pattern number in green
+* Next fill pattern appears as a red superscript; as a red number when playing the fill
 * If there's a pattern sequence, the patterns appear next to the pattern number at the top line (e.g. `12241223`)
+* Dancing man 
+* Mod key indicated ("F O A C ^" for fn, opt, alt, ctrl, shift)
+* Record symbol in live keydrumming mode
 
 ### Bottom
 * **BPM** current BPM (60-320)
@@ -79,7 +85,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `fn+[` decrease volume
 * `fn+]` increase volume
 
-* `Button A` enter instant preview mode -- press a key to hear the sample preview. `Button A` switches back to pattern mode.
+* `Button A` enter sample edit mode -- press a key to hear the sample preview. `Button A` switches back to pattern mode.
 
 ### Files
 
@@ -100,7 +106,7 @@ The dot grid indicates the 16x8 steps for the current pattern.
 * `opt+DEL` delete pattern at cursor
 
 ### channel
-* `fn+k` enter keydrumming mode. Press keys to play the drum sounds. Press `fn+k` to exit keydrumming mode. (note: red circle at bottom indicates live keydrumming mode). `Fn-shift-K` enables **quantized** keydrumming mode.
+* `fn+k` enter keydrumming mode. Press keys to play the drum sounds. Press `fn+k` to exit keydrumming mode. (note: red circle at top indicates live keydrumming mode). `Fn-shift-K` enables **quantized** keydrumming mode.
 * `fn+<n>` toggle mute channel `n` (1-8)
 * `fn+shift+<n>` toggle solo channel `n` (multiple channels can be solo'd)
 * `fn+enter` toggle solo the current channel (where the cursor is)

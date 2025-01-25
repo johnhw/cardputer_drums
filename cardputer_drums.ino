@@ -22,7 +22,7 @@
 
 // TODO:
 
-// beat slicer? 
+// beat slicer? (ptr/offset?)
 // fix waveform not showing in rec
 // sort out kit loading / saving adjustments
 // fix pattern switch visual sync (off by 1/2 beat)

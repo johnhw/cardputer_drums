@@ -120,6 +120,17 @@ void initState(DrumMachine &dm)
     dm.splashFlag = true;
 }
 
+void resetGlobalFX(DrumMachine &dm)
+{
+    dm.mixFX.compressor.threshold_dB = -16;
+    dm.mixFX.compressor.ratio = 4;
+    dm.mixFX.compressor.attack_ms = 1;
+    dm.mixFX.compressor.release_ms = 100;
+    dm.mixFX.compressor.makeup_dB = 3;
+    dm.mixFX.compressor.sampleRate = samplerate;
+    dm.mixFX.compressor.rms = 0;    
+}
+
 // reset the state
 void resetState(DrumMachine &dm)
 {
@@ -139,7 +150,7 @@ void resetState(DrumMachine &dm)
     dm.beatTime = 0;
     dm.volume = 16;
     dm.liveMode = 0;
-    dm.liveVelocity = 0;
+    dm.liveVelocity = 6;
     dm.playStep = 0.0;
 
     strcpy(dm.patternSequence, ""); // reset the pattern sequence
@@ -156,6 +167,8 @@ void resetState(DrumMachine &dm)
         dm.channels[chan].filterCutoff = 0;
         dm.channels[chan]._enabled = 1;
     }
+
+    resetGlobalFX(dm);
 
     // Recalculate BPM settings and channel configurations
     recalcBPM(dm);
@@ -209,6 +222,11 @@ bool resetSampleAdjustments(DrumMachine &dm)
         dm.drumSamples[i].adjustments.loopStart = 0;
         dm.drumSamples[i].adjustments.loopEnd = 0;
         dm.drumSamples[i].adjustments.loopMode = LOOP_NONE;
+        dm.drumSamples[i].adjustments.attackTime = 0;
+        dm.drumSamples[i].adjustments.decayTime = 0;
+        dm.drumSamples[i].adjustments.sustainLevel = 0;
+        dm.drumSamples[i].adjustments.releaseTime = 0;
+        dm.drumSamples[i].adjustments.samplePtr = 0;
     }
 }
 

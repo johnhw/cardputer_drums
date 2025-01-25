@@ -19,7 +19,7 @@ static constexpr const int32_t bufferBeats = 8;            // division of a bar 
 static constexpr const int32_t messageTime = 1000;         // time in ms to show a status message
 static constexpr const int32_t maxSamples = 27;           // maximum number of samples in a kit
 
-const String VERSION = "1.0.5";
+const String VERSION = "1.0.6";
 const String basePathPattern = "/bonnethead/patterns"; // paths in the filesystem to save/load from
 const String basePathKits = "/bonnethead/kits";
 const String basePathSamples = "/bonnethead/samples";

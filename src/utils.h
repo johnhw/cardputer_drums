@@ -13,8 +13,6 @@ int16_t getDigitPressed(Keyboard_Class::KeysState status);
 int16_t getAlphanumericPressed(Keyboard_Class::KeysState status);
 float iirAlpha(float freq);
 float halfLifeTime(int sr, float t);
-int decodeString(String f);
-String encodeString(int f);
 int8_t getKeyIndex(const char *pattern);
 void lowerMessage(const char *message);
 void createArena(arena_t *arena);

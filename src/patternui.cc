@@ -359,7 +359,7 @@ void ctrlKey(DrumMachine &dm, Keyboard_Class::KeysState status)
 
   if (!M5Cardputer.Keyboard.isKeyPressed(KEY_LEFT_SHIFT))
   {
-    chanData_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
+    step_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
     if (!step)
       return;
 
@@ -408,7 +408,7 @@ void ctrlKey(DrumMachine &dm, Keyboard_Class::KeysState status)
     int32_t ix = getShiftDigitPressed(status);
     if (ix == -1)
       return;
-    chanData_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
+    step_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
     if (!step)
       return;
     step->portaTime = ix;
@@ -915,7 +915,7 @@ void drawNoteDetails(DrumMachine &dm)
   M5Cardputer.Display.setTextColor(GREEN);
   // draw current step display
   M5Cardputer.Display.fillRect(noteBoxX, M5Cardputer.Display.height() - statusHeight - 4, M5Cardputer.Display.width(), statusHeight + 4, TFT_BLACK);
-  chanData_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
+  step_t *step = getStep(dm, dm.cursor.step, dm.cursor.chan);
   char noteBuf[8];
   char statusBuf[64];
   if (step && step->type > 0)

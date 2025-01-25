@@ -112,7 +112,7 @@ int32_t freqIncrement(int32_t totalDetune)
     return freq * 32768.0;
 }
 
-void resetFX(fxData *fx)
+void resetFX(fx_t *fx)
 {
     // clear the retrigger state
     fx->retriggerSamples = 0;
@@ -166,22 +166,22 @@ void resetMix(DrumMachine &dm)
     }
 }
 
-void setDetuneVelocity(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
+void setDetuneVelocity(DrumMachine &dm, mixData_t *mx, step_t *ch)
 {
     if (!mx->currentSample)
         return;
     mx->currentVelocity = ch->velocity;
     mx->portaCoeff = 1 - exp(-ch->portaTime * 2);
     // target detune state includes this step
-    mx->totalDetune = mx->currentSample->adjustments.detune + ch->detune + mx->channelDetune;    
+    mx->totalDetune = mx->currentSample->adjustments.detune + ch->detune + mx->channelDetune;
     mx->totalGain = mx->channelGain * mx->currentVelocity * cBGain(mx->currentSample->adjustments.volume);
 
-    if(mx->currentSample->adjustments.loopMode == LOOP_STRETCH) // stretch samples 
+    if (mx->currentSample->adjustments.loopMode == LOOP_STRETCH) // stretch samples
         computeStretch(dm, mx, ch);
-    else 
+    else
         mx->freqIncrement = freqIncrement(mx->totalDetune); // compute the target step increment
-    if (ch->portaTime == 0)                             // no portamento, just set the increment
-        mx->smoothFreqIncrement = mx->freqIncrement;        
+    if (ch->portaTime == 0)                                 // no portamento, just set the increment
+        mx->smoothFreqIncrement = mx->freqIncrement;
 }
 
 // if the sample has the loop type LOOP_STRETCH,
@@ -189,7 +189,7 @@ void setDetuneVelocity(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
 // fit the length of the pattern
 // the computation is the length of the *loop* start/end stretched to the pattern
 // scaled by the pitch modifier (so +1 octave = half the pattern length)
-void computeStretch(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
+void computeStretch(DrumMachine &dm, mixData_t *mx, step_t *ch)
 {
     int32_t targetSamples = dm.patternSamples;
     sample_t *sample = mx->currentSample;
@@ -197,15 +197,15 @@ void computeStretch(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
     int32_t loopStart = adj->loopStart;
     int32_t loopEnd = sample->len - adj->loopEnd;
     int32_t loopSamples = loopEnd - loopStart;
-    if(loopSamples <= 0) // can't stretch a sample with no loop
-        return; 
+    if (loopSamples <= 0) // can't stretch a sample with no loop
+        return;
     float stretchFactor = (float)loopSamples / (float)targetSamples;
-    float factorAdjustment =  powf(2.0, mx->totalDetune / 1200.0);
+    float factorAdjustment = powf(2.0, mx->totalDetune / 1200.0);
     int32_t freqInc = 32768.0 * (stretchFactor * factorAdjustment);
-    mx->freqIncrement = freqInc;    
+    mx->freqIncrement = freqInc;
 }
 
-void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
+void mixTriggerSample(DrumMachine &dm, mixData_t *mx, step_t *ch)
 {
     mx->stepIndex = mx->nextIndex;
     sample_t *newSample;
@@ -233,34 +233,34 @@ void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
         mx->reverse = false;
 
         // FX
-        fxData *fx = &mx->fx;
-        resetFX(fx);        
-        
-        switch(ch->fx)
+        fx_t *fx = &mx->fx;
+        resetFX(fx);
+
+        switch (ch->fx)
         {
-            case FX_REVERSE:
-                mx->reverse = !mx->reverse;
-                break;
-            case FX_FLAM:
-                fx->nRetrigger = 1;
-                fx->retriggerSamples = dm.oneKickTime * 6;
-                fx->retriggerGain = 1.0;
-                fx->retriggerGainChange = 0.5;
-                break;
-            case FX_TRIPLET:
-                fx->nRetrigger = 3;
-                fx->retriggerSamples = dm.oneKickTime * 4;
-                fx->retriggerGain = 1.0;
-                fx->retriggerGainChange = 0.3;
-                break;
-            case FX_ROLL:
-                fx->nRetrigger = 10000000;
-                fx->retriggerSamples = dm.oneKickTime * 8;
-                fx->retriggerGain = 1.0;
-                fx->retriggerGainChange = 1.0;
-                break;                
+        case FX_REVERSE:
+            mx->reverse = !mx->reverse;
+            break;
+        case FX_FLAM:
+            fx->nRetrigger = 1;
+            fx->retriggerSamples = dm.oneKickTime * 6;
+            fx->retriggerGain = 1.0;
+            fx->retriggerGainChange = 0.5;
+            break;
+        case FX_TRIPLET:
+            fx->nRetrigger = 3;
+            fx->retriggerSamples = dm.oneKickTime * 4;
+            fx->retriggerGain = 1.0;
+            fx->retriggerGainChange = 0.3;
+            break;
+        case FX_ROLL:
+            fx->nRetrigger = 10000000;
+            fx->retriggerSamples = dm.oneKickTime * 8;
+            fx->retriggerGain = 1.0;
+            fx->retriggerGainChange = 1.0;
+            break;
         }
-        
+
         mx->fractionalSampleIndex = 32768 * newSample->adjustments.trimStart;
         // gain is product of channel gain, step velocity and sample gain
 
@@ -288,17 +288,17 @@ void mixTriggerSample(DrumMachine &dm, mixData_t *mx, chanData_t *ch)
 // make sure we retrigger if we need to
 void updateFX(mixData_t *mx)
 {
-    fxData *fx = &mx->fx;
+    fx_t *fx = &mx->fx;
     if (fx->nRetrigger > 0)
-    {        
+    {
         fx->retriggerCounter++;
         // retrigger tripped
         if (fx->retriggerCounter >= fx->retriggerSamples)
         {
             fx->retriggerCounter = 0;
-            fx->nRetrigger--;            
+            fx->nRetrigger--;
             mx->totalGain *= fx->retriggerGain;
-            if(mx->lastSample!=nullptr)
+            if (mx->lastSample != nullptr)
             {
                 mx->currentSample = mx->lastSample;
                 mx->fractionalSampleIndex = 32768 * mx->currentSample->adjustments.trimStart;
@@ -319,12 +319,12 @@ float mixCurrentSample(mixData_t *mx)
         mx->sampleIndex = mx->fractionalSampleIndex / 32768;
         if (mx->sampleIndex >= 0) // skip if we have a negative index due to delay in "trim"
         {
-            if(mx->reverse)
-                in = mx->currentSample->samples[trimmedEnd - mx->sampleIndex] * mx->totalGain;                
+            if (mx->reverse)
+                in = mx->currentSample->samples[trimmedEnd - mx->sampleIndex] * mx->totalGain;
             else
                 in = mx->currentSample->samples[mx->sampleIndex] * mx->totalGain;
         }
-            
+
         // envelope
         if (mx->adsr.enabled)
         {
@@ -348,22 +348,15 @@ float mixCurrentSample(mixData_t *mx)
         // state LOOPING -- go back
         if (mx->loopState == LOOP_STATE_LOOPING && adj->loopMode != LOOP_NONE && mx->sampleIndex >= loopEnd)
         {
-            if (adj->loopMode == LOOP_PINGPONG)
-            {
-                // just reverse direction in pingpong mode
-                mx->reverse = !mx->reverse; // TODO: this is broken
-            }
-            else
-            {
-                mx->sampleIndex = adj->loopStart;
-                mx->fractionalSampleIndex = adj->loopStart * 32768;
-            }
+
+            mx->sampleIndex = adj->loopStart;
+            mx->fractionalSampleIndex = adj->loopStart * 32768;
         }
         // terminate sample
         if (mx->sampleIndex >= trimmedEnd)
         {
             mx->currentSample = nullptr;
-        }        
+        }
     }
     return in;
 }
@@ -447,7 +440,7 @@ void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer, int32_t len)
 
             // check if the step has changed
             newIndex = dm.mixIndex / dm.stepSamples;
-            chanData_t *channelSteps = &dm.currentPattern[chan * nSteps]; // TODO: factor out
+            step_t *channelSteps = &dm.currentPattern[chan * nSteps]; // TODO: factor out
             if (newIndex != mx->nextIndex)
             {
                 mx->nextIndex = newIndex;
@@ -466,6 +459,9 @@ void mixPatternToBuffer(DrumMachine &dm, int16_t *buffer, int32_t len)
         writeToBuffer(out, &buffer[j]);
         dm.mixIndex++;
     }
+
+    // apply FX
+    dynamicCompressFX(buffer, len, &dm.mixFX.compressor);
 }
 
 /* Advance to the next pattern in the sequence *without* updating the display */

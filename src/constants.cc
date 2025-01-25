@@ -26,4 +26,4 @@ const float probabilityTable [] = {
 };
 
 
-const char *loopNames [] = {"", "FWD", "STRETCH", "PINGPONG"};
+const char *loopNames [] = {"", "FWD", "STRETCH"};

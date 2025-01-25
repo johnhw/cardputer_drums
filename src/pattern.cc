@@ -3,7 +3,7 @@
 #include "ui.h"
 #include "patternui.h"
 
-void resetStep(chanData_t *step)
+void resetStep(step_t *step)
 {
     step->type = 0;
     step->velocity = 6;
@@ -24,7 +24,7 @@ void clearPattern(DrumMachine &dm)
         {
             dm.cursor.step = j;
             dm.cursor.chan = i;
-            chanData_t *ch = getStep(dm, j, i);
+            step_t *ch = getStep(dm, j, i);
             resetStep(ch);                        
         }
     }
@@ -40,7 +40,7 @@ void _setPattern(DrumMachine &dm, int ix)
     dm.currentPattern = &dm.allPatterns[nSteps * nChans * ix];
 }
 
-void resetPatternElement(chanData_t *elt)
+void resetPatternElement(step_t *elt)
 {
     elt->type = 0;
     elt->velocity = 6;
@@ -145,7 +145,7 @@ void cycleCursorFX(DrumMachine &dm)
 void rotateChannelLeft(DrumMachine &dm)
 {
     int i;
-    chanData_t tmp;
+    step_t tmp;
     int index = nSteps * dm.cursor.chan;
     tmp = dm.currentPattern[index];
     for (i = 0; i < nSteps; i++)
@@ -159,7 +159,7 @@ void rotateChannelLeft(DrumMachine &dm)
 void rotateChannelRight(DrumMachine &dm)
 {
     int i;
-    chanData_t tmp;
+    step_t tmp;
     int index = nSteps * dm.cursor.chan;
     tmp = dm.currentPattern[index + nSteps - 1];
     for (i = nSteps - 1; i > 0; i--)
@@ -192,7 +192,7 @@ sample_t *getSample(DrumMachine &dm, int16_t sampleIndex)
     return &dm.drumSamples[ix];
 }
 
-chanData_t *getStep(DrumMachine &dm, int16_t step, int16_t chan)
+step_t *getStep(DrumMachine &dm, int16_t step, int16_t chan)
 {
     int index = step + nSteps * chan;
     return &dm.currentPattern[index];

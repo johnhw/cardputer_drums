@@ -12,7 +12,7 @@ void getCursorChar(DrumMachine &dm, char &ch, int16_t &velocity);
 void clearPattern(DrumMachine &dm);
 void _setPattern(DrumMachine &dm, int ix);
 void updatePattern(DrumMachine &dm);
-void resetPatternElement(chanData_t *elt);
+void resetPatternElement(step_t *elt);
 void setPattern(DrumMachine &dm, int ix);
 void copyPattern(DrumMachine &dm);
 void pastePattern(DrumMachine &dm);
@@ -20,7 +20,7 @@ void selectiveClearPattern(DrumMachine &dm);
 
 int32_t getKickDelay(DrumMachine &dm, int16_t step, int16_t chan);
 sample_t *getSample(DrumMachine &dm, int16_t sampleIndex);
-chanData_t *getStep(DrumMachine &dm, int16_t step, int16_t chan);
+step_t *getStep(DrumMachine &dm, int16_t step, int16_t chan);
 
 void rotateChannelLeft(DrumMachine &dm);
 void rotateChannelRight(DrumMachine &dm);

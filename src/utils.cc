@@ -45,29 +45,6 @@ void *allocBuffer(void *buffer, int16_t len, int32_t size)
   return buffer;
 }
 
-/* Take a single character string 0-9a-z and return the integer value */
-/* Ignore case. Return -1 for invalid characters */
-int decodeString(String f)
-{
-  if (f.length() != 1)
-    return -1;
-  char c = f[0];
-  if (c >= '0' && c <= '9')
-    return c - '0';
-  if (c >= 'a' && c <= 'z')
-    return c - 'a' + 10;
-  return -1;
-}
-
-/* Take an integer value 0-35 and return the single character string */
-String encodeString(int f)
-{
-  if (f < 10)
-    return String(f);
-  if (f < 36)
-    return String((char)('a' + f - 10));
-  return String("?");
-}
 
 int16_t getDigitPressed(Keyboard_Class::KeysState status)
 {

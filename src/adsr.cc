@@ -15,7 +15,7 @@ static inline float dbToLinear(float dB)
 
 static float computeCoef(float startAmp, float endAmp, float numSamples)
 {
-    if (numSamples <= 0.0f || startAmp <= 0.0f)
+    if (numSamples <= 1.0f || startAmp <= 0.0f)
     {
         return 1.0f;
     }
@@ -30,17 +30,20 @@ void initADSR(adsr_t *adsr,
 {
     adsr->samplerate = samplerate;
 
+    
     adsr->attackMs = a_ms;
     adsr->decayMs = d_ms;
     adsr->releaseMs = r_ms;
     adsr->sustainDb = s_db;
+
+    
 
     // Convert sustain from dB to linear
     adsr->sustainLevel = dbToLinear(s_db);
 
     // Precompute the attack coefficient
     {
-        float attackSamples = a_ms * samplerate * 0.001f;
+        float attackSamples = a_ms * samplerate * 0.001f;        
         float startAmp = MIN_ADSR_AMPLITUDE; // -90 dB
         float endAmp = 1.0f;                 // 0 dB
         adsr->attackCoef = computeCoef(startAmp, endAmp, attackSamples);
