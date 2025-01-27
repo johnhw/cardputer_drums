@@ -209,6 +209,7 @@ bool saveSampleAdjustments(DrumMachine &dm, int32_t bank)
     return true;
 }
 
+
 bool resetSampleAdjustments(DrumMachine &dm)
 {
     int32_t i;
@@ -283,7 +284,7 @@ void setKit(DrumMachine &dm, int kit)
     if (dm.kit < nDrumKits)
     {
         synthKitSamples(dm, drumKits[dm.kit]);
-        loadSampleAdjustments(dm, dm.kit); // load the sample adjustments (if any)
+        //loadSampleAdjustments(dm, dm.kit); // load the sample adjustments (if any)
         requestMix(dm);
 
         return;
@@ -304,7 +305,7 @@ void setKit(DrumMachine &dm, int kit)
     }
     else
     {
-        loadSampleAdjustments(dm, dm.kit); // load the sample adjustments (if any)
+        //loadSampleAdjustments(dm, dm.kit); // load the sample adjustments (if any)
         requestMix(dm);
     }
 }
