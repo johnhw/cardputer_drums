@@ -223,7 +223,7 @@ bool validateWavHeader(byte *buffer)
    named a.wav, b.wav, ..., z.wav */
 bool saveKitSD(const String &path, DrumMachine &dm)
 {
-
+    initSD();
     createDirIfNotExistsSD(path);
     // iterate over a.wav through y.wav
     for (int i = 0; i < 26; i++)
@@ -248,6 +248,7 @@ bool loadKitSD(const String &path, DrumMachine &dm)
 {
     int oldKit = dm.kit;
     bool foundSamples = false;
+    initSD();
     clearSamples(dm);
     // iterate over a.wav through y.wav
     for (int i = 0; i < 26; i++)
@@ -305,6 +306,7 @@ bool loadKitSD(const String &path, DrumMachine &dm)
    Keep scanning until a free filename is found. Return the first free filename */
 String findFreeRenderFilenameSD()
 {
+    initSD();
     String path = basePathRender;
     bool root = SD.exists(path);
     if (!root)
@@ -337,7 +339,7 @@ void write_uint32t(File &file, uint32_t val)
 append to and backpatched later */
 bool openWAVToSD(String fname, int32_t samplerate)
 {
-
+    initSD();
     if (SD.exists(fname))
     {
         SD.remove(fname);
